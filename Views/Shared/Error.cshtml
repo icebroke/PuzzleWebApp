@@ -1,0 +1,25 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Ralat";
+}
+
+<h1 class="text-danger">Ralat.</h1>
+<h2 class="text-danger">Ralat berlaku semasa memproses permintaan anda.</h2>
+
+@if (Model.ShowRequestId)
+{
+    <p>
+        <strong>ID permintaan:</strong> <code>@Model.RequestId</code>
+    </p>
+}
+
+<h3>Mod pembangunan</h3>
+<p>
+    Menukar kepada persekitaran <strong>Development</strong> akan memaparkan maklumat ralat dengan lebih terperinci.
+</p>
+<p>
+    <strong>Jangan aktifkan persekitaran Development untuk aplikasi yang telah diterbitkan.</strong>
+    Maklumat sensitif daripada pengecualian mungkin dipaparkan kepada pengguna.
+    Untuk penyahpepijatan setempat, tetapkan pemboleh ubah persekitaran <strong>ASPNETCORE_ENVIRONMENT</strong> kepada <strong>Development</strong>
+    dan mulakan semula aplikasi.
+</p>

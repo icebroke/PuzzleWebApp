@@ -1,0 +1,47 @@
+@model PuzzleWebApp.ViewModels.RateLimitErrorViewModel
+@{
+    ViewData["Title"] = "Sila tunggu sebentar";
+}
+
+<main class="join-page">
+    <section class="join-card rate-limit-card" role="alert">
+        <div class="brand-mark rate-limit-mark" aria-hidden="true">⌛</div>
+        <p class="eyebrow">Had permintaan dicapai</p>
+        <h1>Tunggu sebentar</h1>
+        <p class="intro">Terlalu banyak permintaan dibuat dalam masa yang singkat. Permainan anda tidak dipadamkan.</p>
+
+        <div class="rate-limit-instructions">
+            <strong>Apa yang perlu anda lakukan?</strong>
+            <ol>
+                <li id="retry-instruction">Tunggu kira-kira <span id="retry-countdown">@Model.RetryAfterSeconds</span> saat, kemudian tekan <strong>Cuba semula</strong> atau muat semula halaman.</li>
+                <li>Jika anda sedang bermain, anda juga boleh kembali ke permainan. Jika diminta, buka halaman utama dan masukkan ID pemain yang sama untuk menyambung.</li>
+                <li>Jika masalah berterusan, tunggu seketika sebelum mencuba lagi.</li>
+            </ol>
+        </div>
+
+        <div class="rate-limit-actions">
+            <a class="btn btn-primary btn-lg" href="@Model.ReturnUrl" id="retry-link">Cuba semula</a>
+            <a class="btn btn-outline-secondary btn-lg" asp-controller="Home" asp-action="Index">Kembali ke halaman utama / log masuk</a>
+        </div>
+        <p class="privacy-note">Kemajuan yang telah disimpan akan kekal dengan ID pemain anda.</p>
+    </section>
+</main>
+
+@section Scripts {
+    <script>
+        (() => {
+            const countdown = document.querySelector("#retry-countdown");
+            const instruction = document.querySelector("#retry-instruction");
+            let seconds = Number(countdown.textContent);
+            window.setInterval(() => {
+                if (seconds > 0) {
+                    seconds -= 1;
+                    countdown.textContent = String(seconds);
+                    if (seconds === 0) {
+                        instruction.textContent = "Anda boleh cuba semula sekarang atau muat semula halaman.";
+                    }
+                }
+            }, 1000);
+        })();
+    </script>
+}

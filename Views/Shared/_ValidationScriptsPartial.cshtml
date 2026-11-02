@@ -1,0 +1,24 @@
+﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+<script>
+    if (window.jQuery && jQuery.validator) {
+        jQuery.extend(jQuery.validator.messages, {
+            required: "Medan ini wajib diisi.",
+            remote: "Sila betulkan medan ini.",
+            email: "Sila masukkan alamat e-mel yang sah.",
+            url: "Sila masukkan URL yang sah.",
+            date: "Sila masukkan tarikh yang sah.",
+            dateISO: "Sila masukkan tarikh yang sah (ISO).",
+            number: "Sila masukkan nombor yang sah.",
+            digits: "Sila masukkan nombor sahaja.",
+            equalTo: "Sila masukkan nilai yang sama sekali lagi.",
+            maxlength: jQuery.validator.format("Sila masukkan tidak lebih daripada {0} aksara."),
+            minlength: jQuery.validator.format("Sila masukkan sekurang-kurangnya {0} aksara."),
+            rangelength: jQuery.validator.format("Sila masukkan nilai antara {0} hingga {1} aksara."),
+            range: jQuery.validator.format("Sila masukkan nilai antara {0} hingga {1}."),
+            max: jQuery.validator.format("Sila masukkan nilai kurang daripada atau sama dengan {0}."),
+            min: jQuery.validator.format("Sila masukkan nilai lebih daripada atau sama dengan {0}."),
+            step: "Sila masukkan gandaan yang sah."
+        });
+    }
+</script>

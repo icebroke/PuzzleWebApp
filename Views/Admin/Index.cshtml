@@ -1,0 +1,98 @@
+@model PuzzleWebApp.ViewModels.AdminOverviewViewModel
+@{
+    ViewData["Title"] = "Keputusan keseluruhan";
+    var accuracy = Model.TotalSubmittedAnswers == 0
+        ? 0
+        : (int)Math.Round((double)Model.TotalCorrectAnswers / Model.TotalSubmittedAnswers * 100);
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Papan pemuka baca sahaja</p>
+            <h1>Keputusan keseluruhan</h1>
+            <p class="admin-subtitle">@Model.CrosswordTitle</p>
+        </div>
+        <form asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-secondary admin-logout">Log keluar</button>
+        </form>
+    </header>
+
+    <section class="admin-stats" aria-label="Statistik keseluruhan">
+        <article class="admin-stat-card"><span>Pemain</span><strong>@Model.TotalAttempts</strong><small>telah memulakan teka silang kata</small></article>
+        <article class="admin-stat-card"><span>Dihantar</span><strong>@Model.SubmittedAttempts</strong><small>penghantaran akhir</small></article>
+        <article class="admin-stat-card"><span>Jawapan betul</span><strong>@Model.TotalCorrectAnswers <small>/ @Model.TotalSubmittedAnswers</small></strong><small>daripada permainan yang dihantar</small></article>
+        <article class="admin-stat-card"><span>Ketepatan keseluruhan</span><strong>@accuracy%</strong><small>jawapan yang dihantar sahaja</small></article>
+    </section>
+
+    <section class="admin-results-panel">
+        <div class="admin-panel-heading">
+            <div><span class="panel-kicker">Peserta</span><h2>Keputusan pemain</h2></div>
+            <span class="clue-count">@Model.Attempts.Count</span>
+        </div>
+        @if (Model.Attempts.Count == 0)
+        {
+            <p class="admin-empty">Belum ada pemain yang memulakan teka silang kata ini.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table admin-results-table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Pemain</th>
+                            <th scope="col">ID pemain</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Dijawab</th>
+                            <th scope="col">Betul</th>
+                            <th scope="col">Masa dihantar</th>
+                            <th scope="col"><span class="visually-hidden">Semakan</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var attempt in Model.Attempts)
+                    {
+                        <tr>
+                            <td class="admin-player-name">@attempt.PlayerName</td>
+                            <td><span class="admin-player-id">@attempt.PlayerId</span></td>
+                            <td>
+                                @if (attempt.SubmittedAtUtc.HasValue)
+                                {
+                                    <span class="admin-status is-submitted">Dihantar</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-status is-in-progress">Sedang bermain</span>
+                                }
+                            </td>
+                            <td>@attempt.AnsweredCount / @attempt.TotalClues</td>
+                            <td>
+                                @if (attempt.SubmittedAtUtc.HasValue)
+                                {
+                                    <strong>@attempt.CorrectCount</strong><span class="admin-score-total"> / @attempt.TotalClues</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-score-total">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (attempt.SubmittedAtUtc.HasValue)
+                                {
+                                    @attempt.SubmittedAtUtc.Value.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    <span class="admin-score-total">—</span>
+                                }
+                            </td>
+                            <td><a asp-action="Attempt" asp-route-id="@attempt.Id" class="admin-review-link">Semak jawapan <span aria-hidden="true">→</span></a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</main>

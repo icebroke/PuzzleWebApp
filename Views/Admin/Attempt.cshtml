@@ -1,0 +1,61 @@
+@model PuzzleWebApp.ViewModels.AdminAttemptDetailViewModel
+@{
+    ViewData["Title"] = "Semakan jawapan pemain";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Index" class="admin-back-link">← Keputusan keseluruhan</a>
+            <p class="eyebrow admin-detail-eyebrow">Semakan jawapan</p>
+            <h1>@Model.PlayerName</h1>
+            <p class="admin-subtitle">@Model.CrosswordTitle <span class="admin-player-id">@Model.PlayerId</span></p>
+        </div>
+        <div class="admin-detail-score">
+            <strong>@Model.CorrectCount / @Model.TotalClues</strong>
+            <span>betul · @Model.AnsweredCount dijawab</span>
+            @if (Model.SubmittedAtUtc.HasValue)
+            {
+                <small>Dihantar pada @Model.SubmittedAtUtc.Value.ToLocalTime().ToString("g")</small>
+            }
+            else
+            {
+                <small>Belum dihantar · kemajuan semasa</small>
+            }
+        </div>
+    </header>
+
+    <section class="admin-results-panel answer-review-panel">
+        <div class="admin-panel-heading">
+            <div><span class="panel-kicker">Skema jawapan</span><h2>Keputusan setiap petunjuk</h2></div>
+        </div>
+        <div class="answer-review-list">
+            @foreach (var clue in Model.Clues)
+            {
+                <article class="answer-review-card @(clue.IsCorrect ? "is-correct" : clue.IsAnswered ? "is-incorrect" : "is-unanswered")">
+                    <div class="answer-review-topline">
+                        <span class="clue-number">@clue.Number</span>
+                        <span class="admin-direction">@(clue.Direction == PuzzleWebApp.Models.CrosswordDirection.Across ? "Melintang" : "Menegak")</span>
+                        @if (clue.IsCorrect)
+                        {
+                            <span class="admin-status is-submitted">Betul</span>
+                        }
+                        else if (clue.IsAnswered)
+                        {
+                            <span class="admin-status is-incorrect-status">Salah</span>
+                        }
+                        else
+                        {
+                            <span class="admin-status is-in-progress">Tidak dijawab</span>
+                        }
+                    </div>
+                    <p class="answer-review-clue">@clue.Text</p>
+                    <div class="answer-comparison">
+                        <div><span>Jawapan pemain</span><strong class="answer-letters">@clue.PlayerAnswer</strong></div>
+                        <div><span>Jawapan betul</span><strong class="answer-letters">@clue.CorrectAnswer</strong></div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</main>

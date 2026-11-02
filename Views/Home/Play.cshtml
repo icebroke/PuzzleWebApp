@@ -1,0 +1,145 @@
+@model PuzzleWebApp.ViewModels.CrosswordPlayViewModel
+@using PuzzleWebApp.Models
+@{
+    ViewData["Title"] = Model.CrosswordTitle;
+    var acrossClues = Model.Clues.Where(clue => clue.Direction == CrosswordDirection.Across).ToList();
+    var downClues = Model.Clues.Where(clue => clue.Direction == CrosswordDirection.Down).ToList();
+}
+
+<main id="crossword-game" class="game-page" data-rows="@Model.Rows" data-columns="@Model.Columns" data-submitted="@Model.IsSubmitted.ToString().ToLowerInvariant()">
+    <form id="antiforgery-form">@Html.AntiForgeryToken()</form>
+    <header class="game-header">
+        <a asp-action="Index" class="back-link" aria-label="Kembali ke halaman pemain">← <span>Keluar</span></a>
+        <div class="game-heading">
+            <p class="eyebrow">Cabaran integriti</p>
+            <h1>@Model.CrosswordTitle</h1>
+        </div>
+        <div class="player-chip"><span class="player-avatar" aria-hidden="true">@Model.PlayerName[..1].ToUpperInvariant()</span><span>@Model.PlayerName</span></div>
+    </header>
+
+    <div class="game-intro">
+        <p>@Model.CrosswordDescription</p>
+        <div class="game-status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span id="save-status">Kemajuan disimpan secara automatik</span>
+        </div>
+    </div>
+
+    @if (Model.IsSubmitted)
+    {
+        <div id="submission-banner" class="completion-banner" role="status">
+            <span class="completion-icon" aria-hidden="true">✓</span>
+            <div><strong>Jawapan anda telah dihantar.</strong><span>Terima kasih, @Model.PlayerName. Jawapan tidak boleh diubah lagi.</span></div>
+        </div>
+    }
+    else
+    {
+        <div id="submission-banner" class="completion-banner d-none" role="status"></div>
+    }
+
+    <section class="game-layout" aria-label="Crossword game">
+        <div class="board-panel">
+            <div class="board-toolbar">
+                <div>
+                    <span class="panel-kicker">Teka silang kata anda</span>
+                    <span class="progress-label" id="progress-label">@Model.AnsweredCount daripada @Model.Clues.Count petunjuk dijawab</span>
+                </div>
+                <button type="button" class="direction-toggle" id="direction-toggle" aria-label="Tukar arah petunjuk">
+                    <span class="direction-icon" aria-hidden="true">↔</span>
+                    <span id="direction-label">Melintang</span>
+                </button>
+            </div>
+
+            <div class="crossword-board-wrap">
+                <div class="crossword-grid"
+                     role="grid"
+                     aria-label="Crossword letter grid"
+                     style="--column-count: @Model.Columns">
+                    @foreach (var cell in Model.Cells)
+                    {
+                        if (cell.IsPlayable)
+                        {
+                            <div class="crossword-square" data-row="@cell.Row" data-column="@cell.Column">
+                                @if (cell.ClueNumber.HasValue)
+                                {
+                                    <span class="square-number">@cell.ClueNumber.Value</span>
+                                }
+                                <input class="crossword-cell"
+                                       type="text"
+                                       maxlength="1"
+                                       value="@cell.Letter"
+                                       autocomplete="off"
+                                       autocapitalize="characters"
+                                       spellcheck="false"
+                                       inputmode="text"
+                                       aria-label="Baris @(cell.Row + 1), lajur @(cell.Column + 1)"
+                                       data-row="@cell.Row"
+                                       data-column="@cell.Column"
+                                       data-across-key="@cell.AcrossKey"
+                                       data-down-key="@cell.DownKey"
+                                       disabled="@Model.IsSubmitted" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="crossword-block" role="gridcell" aria-hidden="true"></div>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="board-actions">
+                @if (!Model.IsSubmitted)
+                {
+                    <button type="button" class="btn btn-primary" id="submit-puzzle">Hantar jawapan</button>
+                    <button type="button" class="btn btn-outline-secondary" id="clear-answers">Kosongkan grid</button>
+                }
+                else
+                {
+                    <span class="submitted-label">Telah dihantar</span>
+                }
+            </div>
+            @if (!Model.IsSubmitted)
+            {
+                <p class="keyboard-hint">Ketik petak untuk memilih petunjuk. Anda boleh membiarkan petunjuk lain kosong, tetapi mesti menjawab sekurang-kurangnya satu petunjuk dengan lengkap.</p>
+                <p id="submission-feedback" class="submission-feedback" role="status" aria-live="polite"></p>
+            }
+        </div>
+
+        <aside class="clues-panel" aria-label="Petunjuk teka silang kata">
+            <div class="clues-heading">
+                <div><span class="panel-kicker">Petunjuk</span><h2>Cari jawapannya</h2></div>
+                <span class="clue-count">@Model.Clues.Count</span>
+            </div>
+            @foreach (var (direction, clues) in new[] { (CrosswordDirection.Across, acrossClues), (CrosswordDirection.Down, downClues) })
+            {
+                var heading = direction == CrosswordDirection.Across ? "Melintang" : "Menegak";
+                <section class="clue-group" aria-labelledby="@heading.ToLowerInvariant()-heading">
+                    <h3 id="@heading.ToLowerInvariant()-heading" class="clue-group-title">@heading</h3>
+                    <ol class="clue-list">
+                        @foreach (var clue in clues)
+                        {
+                            <li>
+                                <button type="button"
+                                        class="clue-button"
+                                        data-clue-key="@clue.Key"
+                                        data-direction="@clue.Direction"
+                                        data-start-row="@clue.StartRow"
+                                        data-start-column="@clue.StartColumn"
+                                        aria-pressed="false">
+                                    <span class="clue-number">@clue.Number</span>
+                                    <span class="clue-text">@clue.Text</span>
+                                    <span class="clue-length">@clue.Length huruf</span>
+                                    <span class="clue-check" aria-hidden="true">✓</span>
+                                </button>
+                            </li>
+                        }
+                    </ol>
+                </section>
+            }
+        </aside>
+    </section>
+</main>
+
+@section Scripts {
+    <script src="~/js/crossword.js" asp-append-version="true"></script>
+}
