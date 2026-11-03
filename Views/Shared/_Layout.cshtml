@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f5f7fb" />
     <title>@ViewData["Title"] - Teka Silang Kata</title>
+    <link rel="icon" href="@Url.Content("~/favicon.ico")" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -13,9 +14,9 @@
         @RenderBody()
     </div>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js" nonce="@Context.Items["ScriptNonce"]"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" nonce="@Context.Items["ScriptNonce"]"></script>
+    <script src="~/js/site.js" asp-append-version="true" nonce="@Context.Items["ScriptNonce"]"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

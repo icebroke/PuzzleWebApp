@@ -1,8 +1,8 @@
 using System.Threading.RateLimiting;
 using System.Globalization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PuzzleWebApp.Data;
+using PuzzleWebApp.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +76,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
-    EnsureSubmissionColumn(db);
+    db.Database.Migrate(); // Automatically applies any pending migrations to the database
+
     CrosswordSeed.EnsureSeeded(db);
 }
 
@@ -90,6 +91,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// Middlewares
+app.UseMiddleware<CspMiddleware>();
+
 app.UseRateLimiter();
 app.UseSession();
 
@@ -105,24 +110,3 @@ app.MapControllerRoute(
 
 app.Run();
 
-static void EnsureSubmissionColumn(AppDbContext db)
-{
-    var connection = db.Database.GetDbConnection();
-    connection.Open();
-    try
-    {
-        using var checkColumn = connection.CreateCommand();
-        checkColumn.CommandText = "SELECT COUNT(*) FROM pragma_table_info('CrosswordAttempts') WHERE name = 'SubmittedAtUtc'";
-        var exists = Convert.ToInt32(checkColumn.ExecuteScalar()) > 0;
-        if (!exists)
-        {
-            using var addColumn = connection.CreateCommand();
-            addColumn.CommandText = "ALTER TABLE CrosswordAttempts ADD COLUMN SubmittedAtUtc TEXT NULL";
-            addColumn.ExecuteNonQuery();
-        }
-    }
-    finally
-    {
-        connection.Close();
-    }
-}

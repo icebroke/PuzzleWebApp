@@ -1,6 +1,6 @@
-﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
-<script>
+﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js" nonce="@Context.Items["ScriptNonce"]"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js" nonce="@Context.Items["ScriptNonce"]"></script>
+<script nonce="@Context.Items["ScriptNonce"]">
     if (window.jQuery && jQuery.validator) {
         jQuery.extend(jQuery.validator.messages, {
             required: "Medan ini wajib diisi.",

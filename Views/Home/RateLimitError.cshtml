@@ -28,7 +28,7 @@
 </main>
 
 @section Scripts {
-    <script>
+    <script nonce="@Context.Items["ScriptNonce"]">
         (() => {
             const countdown = document.querySelector("#retry-countdown");
             const instruction = document.querySelector("#retry-instruction");

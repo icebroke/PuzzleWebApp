@@ -21,7 +21,7 @@
         <p>@Model.CrosswordDescription</p>
         <div class="game-status" aria-live="polite">
             <span class="status-dot"></span>
-            <span id="save-status">Kemajuan disimpan secara automatik</span>
+            <span id="save-status">Data permainan disimpan secara automatik</span>
         </div>
     </div>
 
@@ -100,7 +100,7 @@
             </div>
             @if (!Model.IsSubmitted)
             {
-                <p class="keyboard-hint">Ketik petak untuk memilih petunjuk. Anda boleh membiarkan petunjuk lain kosong, tetapi mesti menjawab sekurang-kurangnya satu petunjuk dengan lengkap.</p>
+                <p class="keyboard-hint">Klik/Tap petak untuk memilih petunjuk. Anda boleh membiarkan petunjuk lain kosong, tetapi mesti menjawab sekurang-kurangnya satu petunjuk dengan lengkap.</p>
                 <p id="submission-feedback" class="submission-feedback" role="status" aria-live="polite"></p>
             }
         </div>
@@ -128,7 +128,7 @@
                                         aria-pressed="false">
                                     <span class="clue-number">@clue.Number</span>
                                     <span class="clue-text">@clue.Text</span>
-                                    <span class="clue-length">@clue.Length huruf</span>
+                                    @* <span class="clue-length">@clue.Length huruf</span> *@
                                     <span class="clue-check" aria-hidden="true">✓</span>
                                 </button>
                             </li>
@@ -141,5 +141,5 @@
 </main>
 
 @section Scripts {
-    <script src="~/js/crossword.js" asp-append-version="true"></script>
+    <script src="~/js/crossword.js" asp-append-version="true" nonce="@Context.Items["ScriptNonce"]"></script>
 }

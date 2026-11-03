@@ -25,9 +25,19 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(ellipse at 10% 0%, rgba(108, 115, 242, .09), transparent 34rem),
+    radial-gradient(
+      ellipse at 10% 0%,
+      rgba(108, 115, 242, 0.09),
+      transparent 34rem
+    ),
     var(--page);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
 }
 
 button,
@@ -49,10 +59,10 @@ input {
 .join-card {
   width: min(100%, 500px);
   padding: clamp(26px, 6vw, 48px);
-  border: 1px solid rgba(226, 230, 240, .9);
+  border: 1px solid rgba(226, 230, 240, 0.9);
   border-radius: 24px;
   background: var(--surface);
-  box-shadow: 0 24px 70px rgba(37, 48, 82, .09);
+  box-shadow: 0 24px 70px rgba(37, 48, 82, 0.09);
 }
 
 .brand-mark {
@@ -71,9 +81,9 @@ input {
 .panel-kicker {
   margin: 0;
   color: var(--brand);
-  font-size: .73rem;
+  font-size: 0.73rem;
   font-weight: 750;
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -82,7 +92,7 @@ input {
   margin: 8px 0 12px;
   font-size: clamp(1.7rem, 5vw, 2.25rem);
   font-weight: 750;
-  letter-spacing: -.045em;
+  letter-spacing: -0.045em;
 }
 
 .intro,
@@ -100,7 +110,7 @@ input {
   border-radius: 14px;
   background: #f7f7ff;
   color: #4a5270;
-  font-size: .9rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
@@ -110,7 +120,7 @@ input {
 
 .join-form .form-label {
   color: #39445d;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 650;
 }
 
@@ -123,7 +133,7 @@ input {
 
 .join-form .form-control:focus {
   border-color: #898df0;
-  box-shadow: 0 0 0 .22rem rgba(81, 87, 217, .13);
+  box-shadow: 0 0 0 0.22rem rgba(81, 87, 217, 0.13);
 }
 
 .btn-primary {
@@ -157,7 +167,7 @@ input {
   border-radius: 14px;
   color: #665735;
   background: #fffaf0;
-  font-size: .88rem;
+  font-size: 0.88rem;
   line-height: 1.55;
 }
 
@@ -183,7 +193,7 @@ input {
   align-items: center;
   justify-items: center;
   padding: 10px 14px;
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .rate-limit-actions .btn-outline-secondary {
@@ -196,7 +206,7 @@ input {
 .privacy-note {
   margin: 20px 0 0;
   color: #8a94a8;
-  font-size: .78rem;
+  font-size: 0.78rem;
   text-align: center;
 }
 
@@ -213,7 +223,7 @@ input {
   top: 0;
   right: 0;
   color: #8992a5;
-  font-size: .75rem;
+  font-size: 0.75rem;
   text-decoration: none;
 }
 
@@ -226,7 +236,7 @@ input {
 .validation-summary,
 .field-validation {
   color: #bd3341;
-  font-size: .83rem;
+  font-size: 0.83rem;
 }
 
 .field-validation {
@@ -255,7 +265,7 @@ input {
 .back-link {
   width: fit-content;
   color: #65708a;
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
 }
@@ -280,7 +290,7 @@ input {
   justify-self: end;
   gap: 9px;
   color: #49536b;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -312,7 +322,7 @@ input {
 
 .game-intro > p {
   margin: 0;
-  font-size: .92rem;
+  font-size: 0.92rem;
 }
 
 .game-status {
@@ -321,7 +331,7 @@ input {
   align-items: center;
   gap: 8px;
   color: #768198;
-  font-size: .78rem;
+  font-size: 0.78rem;
 }
 
 .game-status.has-error {
@@ -370,12 +380,12 @@ input {
 
 .completion-banner div span {
   color: #54806a;
-  font-size: .84rem;
+  font-size: 0.84rem;
 }
 
 .game-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   align-items: start;
   gap: 22px;
 }
@@ -386,7 +396,7 @@ input {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
-  box-shadow: 0 12px 34px rgba(37, 48, 82, .045);
+  box-shadow: 0 12px 34px rgba(37, 48, 82, 0.045);
 }
 
 .board-panel {
@@ -408,7 +418,7 @@ input {
 
 .progress-label {
   color: #6f7a91;
-  font-size: .82rem;
+  font-size: 0.82rem;
 }
 
 .direction-toggle {
@@ -421,7 +431,7 @@ input {
   border-radius: 10px;
   color: #4b51c4;
   background: #f8f8ff;
-  font-size: .83rem;
+  font-size: 0.83rem;
   font-weight: 650;
 }
 
@@ -445,7 +455,7 @@ input {
   width: min(100%, 600px);
   aspect-ratio: 1;
   grid-template-columns: repeat(var(--column-count), minmax(0, 1fr));
-  gap: clamp(1px, .28vw, 3px);
+  gap: clamp(1px, 0.28vw, 3px);
   user-select: none;
   touch-action: manipulation;
 }
@@ -479,7 +489,7 @@ input {
   outline: 0;
   color: #202a42;
   background: transparent;
-  font-size: clamp(.55rem, 2.7vw, 1.15rem);
+  font-size: clamp(0.55rem, 2.7vw, 1.15rem);
   font-weight: 700;
   line-height: 1;
   text-align: center;
@@ -493,7 +503,7 @@ input {
   top: 1px;
   left: 2px;
   color: #68728a;
-  font-size: clamp(.28rem, .85vw, .48rem);
+  font-size: clamp(0.28rem, 0.85vw, 0.48rem);
   line-height: 1;
   pointer-events: none;
 }
@@ -524,7 +534,7 @@ input {
   min-height: 44px;
   padding-right: 17px;
   padding-left: 17px;
-  font-size: .88rem;
+  font-size: 0.88rem;
 }
 
 .board-actions .btn-outline-secondary {
@@ -536,14 +546,14 @@ input {
 .keyboard-hint {
   margin: 13px 0 0;
   color: #929bad;
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 .submission-feedback {
   min-height: 1.2em;
   margin: 8px 0 0;
   color: #bd3341;
-  font-size: .82rem;
+  font-size: 0.82rem;
 }
 
 .submission-feedback:empty {
@@ -553,7 +563,7 @@ input {
 .submitted-label {
   align-self: center;
   color: #23734b;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -574,7 +584,7 @@ input {
   margin: 4px 0 0;
   font-size: 1.17rem;
   font-weight: 720;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .clue-count {
@@ -585,7 +595,7 @@ input {
   border-radius: 10px;
   color: #5359ce;
   background: #efefff;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -601,9 +611,9 @@ input {
 .clue-group-title {
   margin: 0 0 9px;
   color: #6d7890;
-  font-size: .77rem;
+  font-size: 0.77rem;
   font-weight: 750;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -629,7 +639,9 @@ input {
   color: #424d65;
   background: transparent;
   text-align: left;
-  transition: background-color .12s ease, border-color .12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .clue-button:hover,
@@ -641,19 +653,19 @@ input {
 .clue-number {
   padding-top: 1px;
   color: #5359ce;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 750;
 }
 
 .clue-text {
-  font-size: .82rem;
+  font-size: 1rem;
   line-height: 1.45;
 }
 
 .clue-length {
   grid-column: 2;
   color: #9aa2b2;
-  font-size: .68rem;
+  font-size: 0.68rem;
 }
 
 .clue-check {
@@ -673,7 +685,7 @@ input {
 .admin-login-card .admin-back-link {
   display: inline-block;
   margin-top: 24px;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .admin-config-notice,
@@ -684,7 +696,7 @@ input {
   border-radius: 12px;
   color: #76551e;
   background: #fff9eb;
-  font-size: .87rem;
+  font-size: 0.87rem;
   line-height: 1.5;
 }
 
@@ -716,7 +728,7 @@ input {
   margin: 6px 0 4px;
   font-size: clamp(1.7rem, 4vw, 2.25rem);
   font-weight: 750;
-  letter-spacing: -.045em;
+  letter-spacing: -0.045em;
 }
 
 .admin-subtitle {
@@ -726,13 +738,13 @@ input {
   gap: 10px;
   margin: 0;
   color: var(--muted);
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .admin-logout {
   min-height: 42px;
   border-radius: 10px;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .admin-stats {
@@ -751,12 +763,12 @@ input {
   border: 1px solid var(--line);
   border-radius: 15px;
   background: var(--surface);
-  box-shadow: 0 8px 25px rgba(37, 48, 82, .035);
+  box-shadow: 0 8px 25px rgba(37, 48, 82, 0.035);
 }
 
 .admin-stat-card > span {
   color: #758097;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -764,20 +776,20 @@ input {
   color: var(--ink);
   font-size: 1.8rem;
   font-weight: 750;
-  letter-spacing: -.04em;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
 
 .admin-stat-card > strong small {
   color: #8a94a8;
-  font-size: .95rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .admin-stat-card > small {
   color: #929bad;
-  font-size: .73rem;
+  font-size: 0.73rem;
 }
 
 .admin-results-panel {
@@ -786,7 +798,7 @@ input {
   border: 1px solid var(--line);
   border-radius: 17px;
   background: var(--surface);
-  box-shadow: 0 12px 34px rgba(37, 48, 82, .045);
+  box-shadow: 0 12px 34px rgba(37, 48, 82, 0.045);
 }
 
 .admin-panel-heading {
@@ -801,13 +813,13 @@ input {
   margin: 4px 0 0;
   font-size: 1.2rem;
   font-weight: 720;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 .admin-results-table {
   min-width: 760px;
   margin: 0;
-  font-size: .84rem;
+  font-size: 0.84rem;
 }
 
 .admin-results-table thead th {
@@ -815,9 +827,9 @@ input {
   padding-bottom: 11px;
   border-bottom-color: var(--line);
   color: #8791a5;
-  font-size: .7rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -847,7 +859,7 @@ input {
   color: #6f7a91;
   background: #f8f9fb;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .75rem;
+  font-size: 0.75rem;
 }
 
 .admin-status {
@@ -855,7 +867,7 @@ input {
   align-items: center;
   padding: 5px 8px;
   border-radius: 7px;
-  font-size: .7rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
@@ -881,7 +893,7 @@ input {
 .admin-review-link,
 .admin-back-link {
   color: var(--brand);
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 650;
   text-decoration: none;
 }
@@ -893,7 +905,7 @@ input {
 .admin-empty {
   margin: 20px 0 4px;
   color: #8590a5;
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .admin-detail-eyebrow {
@@ -905,7 +917,7 @@ input {
   justify-items: end;
   gap: 3px;
   color: #758097;
-  font-size: .78rem;
+  font-size: 0.78rem;
   text-align: right;
 }
 
@@ -913,13 +925,13 @@ input {
   color: var(--brand);
   font-size: 1.5rem;
   font-weight: 750;
-  letter-spacing: -.03em;
+  letter-spacing: -0.03em;
 }
 
 .admin-detail-score small {
   margin-top: 4px;
   color: #929bad;
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .answer-review-panel {
@@ -958,7 +970,7 @@ input {
 .admin-direction {
   margin-right: auto;
   color: #8a94a8;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 650;
   text-transform: uppercase;
 }
@@ -966,7 +978,7 @@ input {
 .answer-review-clue {
   margin: 10px 0 12px;
   color: #4c576e;
-  font-size: .82rem;
+  font-size: 0.82rem;
   line-height: 1.5;
 }
 
@@ -987,7 +999,7 @@ input {
 
 .answer-comparison > div > span {
   color: #8a94a8;
-  font-size: .64rem;
+  font-size: 0.64rem;
   font-weight: 650;
   text-transform: uppercase;
 }
@@ -996,8 +1008,8 @@ input {
   overflow-wrap: anywhere;
   color: #39445d;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .88rem;
-  letter-spacing: .04em;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
 }
 
 #antiforgery-form {
@@ -1030,7 +1042,8 @@ input {
 
 @media (max-width: 560px) {
   .app-shell {
-    padding: max(14px, env(safe-area-inset-top)) 12px max(24px, env(safe-area-inset-bottom));
+    padding: max(14px, env(safe-area-inset-top)) 12px
+      max(24px, env(safe-area-inset-bottom));
   }
 
   .join-page {
@@ -1044,7 +1057,7 @@ input {
 
   .rate-limit-instructions {
     padding: 14px;
-    font-size: .83rem;
+    font-size: 0.83rem;
   }
 
   .brand-mark {
@@ -1066,7 +1079,7 @@ input {
   }
 
   .game-heading .eyebrow {
-    font-size: .62rem;
+    font-size: 0.62rem;
   }
 
   .game-heading h1 {
@@ -1076,7 +1089,7 @@ input {
 
   .player-chip {
     gap: 6px;
-    font-size: .75rem;
+    font-size: 0.75rem;
   }
 
   .player-avatar {
@@ -1091,11 +1104,11 @@ input {
   }
 
   .game-intro > p {
-    font-size: .83rem;
+    font-size: 0.83rem;
   }
 
   .game-status {
-    font-size: .74rem;
+    font-size: 0.74rem;
   }
 
   .game-layout {
@@ -1112,13 +1125,13 @@ input {
   }
 
   .progress-label {
-    font-size: .72rem;
+    font-size: 0.72rem;
   }
 
   .direction-toggle {
     min-height: 40px;
     padding: 0 9px;
-    font-size: .76rem;
+    font-size: 0.76rem;
   }
 
   .crossword-board-wrap {
@@ -1135,13 +1148,13 @@ input {
   }
 
   .crossword-cell {
-    font-size: clamp(.53rem, 4.5vw, .93rem);
+    font-size: clamp(0.53rem, 4.5vw, 0.93rem);
   }
 
   .square-number {
     top: 0;
     left: 1px;
-    font-size: clamp(.24rem, 1vw, .38rem);
+    font-size: clamp(0.24rem, 1vw, 0.38rem);
   }
 
   .board-actions {
@@ -1153,11 +1166,11 @@ input {
     flex: 1 1 auto;
     padding-right: 11px;
     padding-left: 11px;
-    font-size: .8rem;
+    font-size: 0.8rem;
   }
 
   .keyboard-hint {
-    font-size: .7rem;
+    font-size: 0.7rem;
     line-height: 1.45;
   }
 
@@ -1168,7 +1181,7 @@ input {
   .admin-logout {
     min-height: 38px;
     padding: 7px 10px;
-    font-size: .75rem;
+    font-size: 0.75rem;
   }
 
   .admin-stats {
@@ -1186,7 +1199,7 @@ input {
   }
 
   .admin-stat-card > span {
-    font-size: .74rem;
+    font-size: 0.74rem;
   }
 
   .admin-detail-score strong {
@@ -1208,6 +1221,6 @@ input {
   }
 
   .clue-text {
-    font-size: .8rem;
+    font-size: 0.8rem;
   }
 }

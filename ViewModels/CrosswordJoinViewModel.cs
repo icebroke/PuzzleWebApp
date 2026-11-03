@@ -12,7 +12,7 @@ public class CrosswordJoinViewModel
     [Display(Name = "Nama anda")]
     public string PlayerName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Sila masukkan ID pemain.")]
+    [Required(ErrorMessage = "Sila masukkan ID anda.")]
     [StringLength(80, MinimumLength = 1, ErrorMessage = "ID pemain tidak boleh melebihi 80 aksara.")]
     [Display(Name = "ID pemain")]
     public string PlayerId { get; set; } = string.Empty;
