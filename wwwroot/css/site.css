@@ -453,8 +453,9 @@ input {
 .crossword-grid {
   display: grid;
   width: min(100%, 600px);
-  aspect-ratio: 1;
+  aspect-ratio: var(--column-count) / var(--row-count);
   grid-template-columns: repeat(var(--column-count), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--row-count), minmax(0, 1fr));
   gap: clamp(1px, 0.28vw, 3px);
   user-select: none;
   touch-action: manipulation;

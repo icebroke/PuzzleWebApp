@@ -22,6 +22,7 @@
   );
   let activeDirection = "Across";
   let activeKey = "";
+  let activeInput = null;
   let saveTimer;
   let saveQueue = Promise.resolve();
 
@@ -97,7 +98,7 @@
         ? currentColumn - startColumn
         : currentRow - startRow;
     const targetIndex = index + offset;
-    const length = Number(clue.querySelector(".clue-length").textContent);
+    const length = Number(clue.dataset.length);
     if (targetIndex < 0 || targetIndex >= length) {
       return;
     }
@@ -196,11 +197,10 @@
 
   inputs.forEach((input) => {
     input.addEventListener("focus", () => {
+      activeInput = input;
       chooseClueForCell(input);
+      input.select();
       input.classList.add("is-selected");
-    });
-    input.addEventListener("click", () => {
-      chooseClueForCell(input, true);
     });
     input.addEventListener("input", () => {
       input.value = input.value
@@ -241,18 +241,21 @@
   });
 
   directionToggle.addEventListener("click", () => {
-    const input = document.activeElement.closest?.(".crossword-cell");
-    if (input) {
-      chooseClueForCell(input, true);
+    const nextDirection = activeDirection === "Across" ? "Down" : "Across";
+    const nextKey = activeInput && keyFor(activeInput, nextDirection);
+    if (nextKey) {
+      selectClue(nextKey);
+      activeInput.focus();
       return;
     }
 
-    const nextDirection = activeDirection === "Across" ? "Down" : "Across";
-    const activeInput = inputs.find((candidate) =>
+    const nextInput = inputs.find((candidate) =>
       keyFor(candidate, nextDirection),
     );
-    if (activeInput) {
-      selectClue(keyFor(activeInput, nextDirection));
+    if (nextInput) {
+      activeInput = nextInput;
+      selectClue(keyFor(nextInput, nextDirection));
+      nextInput.focus();
     }
   });
 
@@ -341,6 +344,7 @@
 
   const firstInput = inputs[0];
   if (firstInput) {
+    activeInput = firstInput;
     chooseClueForCell(firstInput);
   }
 })();
