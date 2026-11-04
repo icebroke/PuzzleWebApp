@@ -12,8 +12,8 @@ public class CrosswordJoinViewModel
     [Display(Name = "Nama anda")]
     public string PlayerName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Sila masukkan ID anda.")]
-    [StringLength(80, MinimumLength = 1, ErrorMessage = "ID pemain tidak boleh melebihi 80 aksara.")]
+    [Required(ErrorMessage = "Sila masukkan MyKad anda.")]
+    [StringLength(12, MinimumLength = 12, ErrorMessage = "MyKad mesti 12 digit.")]
     [Display(Name = "ID pemain")]
     public string PlayerId { get; set; } = string.Empty;
 }
