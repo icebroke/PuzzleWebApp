@@ -90,8 +90,14 @@
             <div class="board-actions">
                 @if (!Model.IsSubmitted)
                 {
-                    <button type="button" class="btn btn-primary" id="submit-puzzle">Hantar jawapan</button>
-                    <button type="button" class="btn btn-outline-secondary" id="clear-answers">Kosongkan grid</button>
+                    <button type="button" class="btn btn-primary" id="submit-puzzle" data-loading-text="Sedang menghantar…">
+                        <span data-button-label>Hantar jawapan</span>
+                        <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="clear-answers" data-loading-text="Sedang mengosongkan…">
+                        <span data-button-label>Kosongkan grid</span>
+                        <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+                    </button>
                 }
                 else
                 {

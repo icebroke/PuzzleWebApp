@@ -5,7 +5,7 @@
 
 <main class="join-page">
     <section class="join-card admin-login-card">
-        <div class="brand-mark" aria-hidden="true">⌑</div>
+        <img class="brand-mark mdht-logo" src="~/images/mdht-logo.png" alt="Majlis Daerah Hulu Terengganu" />
         <p class="eyebrow">Papan pemuka keputusan</p>
         <h1>Log masuk pentadbir</h1>
         <p class="intro">Semak penghantaran pemain dan periksa setiap jawapan.</p>
@@ -18,7 +18,7 @@
         }
         else
         {
-            <form asp-action="Login" method="post" class="join-form">
+            <form asp-action="Login" method="post" class="join-form" data-ajax-form>
                 <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
                 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
                 {
@@ -29,7 +29,11 @@
                     <input asp-for="AccessCode" type="password" class="form-control form-control-lg" autocomplete="current-password" autofocus />
                     <span asp-validation-for="AccessCode" class="field-validation"></span>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg w-100">Log masuk</button>
+                <p class="form-action-feedback" role="status" aria-live="polite" hidden></p>
+                <button type="submit" class="btn btn-primary btn-lg w-100" data-loading-text="Sedang log masuk…">
+                    <span data-button-label>Log masuk</span>
+                    <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+                </button>
             </form>
         }
         <a asp-controller="Home" asp-action="Index" class="admin-back-link">← Kembali ke teka silang kata</a>

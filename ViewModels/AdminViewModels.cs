@@ -18,6 +18,14 @@ public class AdminOverviewViewModel
     public int SubmittedAttempts { get; set; }
     public int TotalCorrectAnswers { get; set; }
     public int TotalSubmittedAnswers { get; set; }
+    public string SearchTerm { get; set; } = string.Empty;
+    public string StatusFilter { get; set; } = string.Empty;
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalFilteredAttempts { get; set; }
+    public int TotalPages => Math.Max(1, (TotalFilteredAttempts + PageSize - 1) / PageSize);
+    public int FirstItemNumber => TotalFilteredAttempts == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+    public int LastItemNumber => Math.Min(CurrentPage * PageSize, TotalFilteredAttempts);
     public List<AdminAttemptSummaryViewModel> Attempts { get; set; } = [];
 }
 

@@ -51,8 +51,8 @@
                     </div>
                     <p class="answer-review-clue">@clue.Text</p>
                     <div class="answer-comparison">
-                        <div><span>Jawapan pemain</span><strong class="answer-letters">@clue.PlayerAnswer</strong></div>
-                        <div><span>Jawapan betul</span><strong class="answer-letters">@clue.CorrectAnswer</strong></div>
+                        <div class="@(clue.IsCorrect ? "is-answer-correct" : clue.IsAnswered ? "is-answer-incorrect" : "is-answer-unanswered")"><span>Jawapan pemain</span><strong class="answer-letters">@(string.IsNullOrEmpty(clue.PlayerAnswer) ? "—" : clue.PlayerAnswer)</strong></div>
+                        <div class="is-correct-answer"><span>Jawapan betul</span><strong class="answer-letters">@clue.CorrectAnswer</strong></div>
                     </div>
                 </article>
             }

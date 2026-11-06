@@ -259,15 +259,27 @@
     }
   });
 
-  clearButton?.addEventListener("click", () => {
+  clearButton?.addEventListener("click", async () => {
     if (!window.confirm("Padam semua huruf dalam teka silang kata ini?")) {
       return;
     }
 
+    window.clearTimeout(saveTimer);
     inputs.forEach((input) => {
       input.value = "";
     });
-    scheduleSave();
+    saveStatus.closest(".game-status").classList.remove("has-error");
+    saveStatus.textContent = "Mengosongkan grid dan menyimpan…";
+    window.AppUi.setButtonLoading(clearButton, true);
+    try {
+      await saveProgress();
+    } catch {
+      saveStatus.textContent =
+        "Grid telah dikosongkan, tetapi tidak dapat disimpan. Sila cuba lagi.";
+      saveStatus.closest(".game-status").classList.add("has-error");
+    } finally {
+      window.AppUi.setButtonLoading(clearButton, false);
+    }
   });
 
   submitButton?.addEventListener("click", async () => {
@@ -282,7 +294,8 @@
     window.clearTimeout(saveTimer);
     const snapshot = getLetters();
     inputs.forEach((input) => (input.disabled = true));
-    submitButton.disabled = true;
+    window.AppUi.setButtonLoading(submitButton, true);
+    saveStatus.textContent = "Menyimpan jawapan sebelum dihantar…";
     if (clearButton) {
       clearButton.disabled = true;
     }
@@ -332,7 +345,9 @@
         "Jawapan anda telah dihantar dan tidak boleh diubah lagi.";
     } catch (error) {
       inputs.forEach((input) => (input.disabled = false));
-      submitButton.disabled = false;
+      window.AppUi.setButtonLoading(submitButton, false);
+      saveStatus.textContent = "Penghantaran tidak berjaya";
+      saveStatus.closest(".game-status").classList.add("has-error");
       if (clearButton) {
         clearButton.disabled = false;
       }

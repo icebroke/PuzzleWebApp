@@ -14,7 +14,6 @@
 }
 
 html {
-  min-width: 320px;
   min-height: 100%;
   font-size: 16px;
   background: var(--page);
@@ -57,7 +56,16 @@ input {
 }
 
 .join-card {
-  width: min(100%, 500px);
+  display: grid;
+  width: min(100%, 920px);
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  grid-template-areas:
+    "welcome form"
+    "support form"
+    "footer form";
+  align-content: center;
+  align-items: center;
+  column-gap: clamp(32px, 6vw, 72px);
   padding: clamp(26px, 6vw, 48px);
   border: 1px solid rgba(226, 230, 240, 0.9);
   border-radius: 24px;
@@ -65,16 +73,30 @@ input {
   box-shadow: 0 24px 70px rgba(37, 48, 82, 0.09);
 }
 
+.join-welcome {
+  grid-area: welcome;
+  align-self: end;
+}
+
 .brand-mark {
   display: grid;
   width: 48px;
   height: 48px;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
   border-radius: 15px;
   place-items: center;
   color: #fff;
   background: linear-gradient(145deg, #777df0, #4a50cf);
   font-size: 1.4rem;
+}
+
+.mdht-logo {
+  display: block;
+  width: 72px;
+  height: 82px;
+  border-radius: 0;
+  background: none;
+  object-fit: contain;
 }
 
 .eyebrow,
@@ -95,27 +117,70 @@ input {
   letter-spacing: -0.045em;
 }
 
+.join-card h1 {
+  overflow-wrap: anywhere;
+}
+
 .intro,
 .game-intro > p {
   color: var(--muted);
   line-height: 1.65;
 }
 
+.join-welcome .intro {
+  margin-bottom: 24px;
+}
+
+.join-form {
+  grid-area: form;
+  width: 100%;
+  align-self: center;
+  padding-left: clamp(24px, 4vw, 48px);
+  border-left: 1px solid var(--line);
+}
+
+.join-support {
+  display: grid;
+  grid-area: support;
+  gap: 12px;
+  align-self: start;
+}
+
 .join-note {
   display: grid;
   gap: 5px;
-  margin: 28px 0;
-  padding: 16px 18px;
+  margin: 0;
+  padding: 13px 15px;
   border: 1px solid #e6e8ff;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #f7f7ff;
   color: #4a5270;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   line-height: 1.5;
 }
 
 .join-note strong {
   color: #343c68;
+}
+
+.join-terms {
+  color: #4a5270;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.join-terms summary {
+  width: fit-content;
+  color: var(--brand);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.join-terms ol {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding-left: 20px;
 }
 
 .join-form .form-label {
@@ -153,7 +218,21 @@ input {
 }
 
 .join-form .btn span {
-  margin-left: 6px;
+  margin-left: 0;
+}
+
+.join-form .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.form-action-feedback {
+  margin: 0 0 12px;
+  color: #bd3341;
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 .rate-limit-mark {
@@ -211,7 +290,10 @@ input {
 }
 
 .join-footer {
+  grid-area: footer;
   position: relative;
+  align-self: end;
+  padding-top: 16px;
 }
 
 .join-footer .privacy-note {
@@ -375,12 +457,14 @@ input {
 
 .completion-banner div {
   display: grid;
+  min-width: 0;
   gap: 2px;
 }
 
 .completion-banner div span {
   color: #54806a;
   font-size: 0.84rem;
+  overflow-wrap: anywhere;
 }
 
 .game-layout {
@@ -446,6 +530,8 @@ input {
 .crossword-board-wrap {
   display: grid;
   width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   margin: 18px auto;
   place-items: center;
 }
@@ -453,6 +539,9 @@ input {
 .crossword-grid {
   display: grid;
   width: min(100%, 600px);
+  min-width: 0;
+  max-width: 100%;
+  justify-self: center;
   aspect-ratio: var(--column-count) / var(--row-count);
   grid-template-columns: repeat(var(--column-count), minmax(0, 1fr));
   grid-template-rows: repeat(var(--row-count), minmax(0, 1fr));
@@ -536,6 +625,38 @@ input {
   padding-right: 17px;
   padding-left: 17px;
   font-size: 0.88rem;
+}
+
+.button-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: submit-spinner 0.7s linear infinite;
+}
+
+.button-spinner[hidden] {
+  display: none;
+}
+
+.btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.82;
+}
+
+@keyframes submit-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-spinner {
+    animation: none;
+  }
 }
 
 .board-actions .btn-outline-secondary {
@@ -713,8 +834,14 @@ input {
 }
 
 .admin-page {
+  --admin-accent: #28665f;
   width: min(100%, 1240px);
   margin: 0 auto;
+}
+
+.admin-page .eyebrow,
+.admin-page .panel-kicker {
+  color: var(--admin-accent);
 }
 
 .admin-header {
@@ -722,14 +849,16 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 8px 0 25px;
+  padding: 8px 0 21px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
 }
 
 .admin-header h1 {
   margin: 6px 0 4px;
   font-size: clamp(1.7rem, 4vw, 2.25rem);
   font-weight: 750;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 
 .admin-subtitle {
@@ -751,16 +880,17 @@ input {
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .admin-stat-card {
   display: grid;
-  min-height: 132px;
+  min-height: 124px;
   align-content: start;
   gap: 8px;
-  padding: 18px;
+  padding: 17px 18px;
+  border-top: 3px solid #d5e8e4;
   border: 1px solid var(--line);
   border-radius: 15px;
   background: var(--surface);
@@ -768,7 +898,7 @@ input {
 }
 
 .admin-stat-card > span {
-  color: #758097;
+  color: #697687;
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -777,7 +907,7 @@ input {
   color: var(--ink);
   font-size: 1.8rem;
   font-weight: 750;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -797,7 +927,7 @@ input {
   min-width: 0;
   padding: clamp(16px, 3vw, 24px);
   border: 1px solid var(--line);
-  border-radius: 17px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 12px 34px rgba(37, 48, 82, 0.045);
 }
@@ -807,14 +937,16 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
 .admin-panel-heading h2 {
   margin: 4px 0 0;
   font-size: 1.2rem;
   font-weight: 720;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .admin-results-table {
@@ -823,11 +955,101 @@ input {
   font-size: 0.84rem;
 }
 
+.admin-filter-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-filter-form label {
+  display: block;
+  margin-bottom: 5px;
+  color: #647184;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.admin-filter-form .form-control,
+.admin-filter-form .form-select {
+  min-height: 42px;
+  border-color: #dfe4ea;
+  border-radius: 8px;
+  font-size: 0.86rem;
+}
+
+.admin-filter-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+}
+
+.admin-list-footer,
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-list-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.admin-list-footer > p {
+  margin: 0;
+  color: #78839a;
+  font-size: 0.78rem;
+}
+
+.admin-list-footer > p strong {
+  color: #4a566a;
+}
+
+.admin-pagination {
+  justify-content: flex-end;
+}
+
+.admin-page-control {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid #dfe4ea;
+  border-radius: 7px;
+  color: #435064;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.admin-page-control:not(.is-disabled):hover {
+  border-color: #b7d2cb;
+  color: #245c55;
+  background: #f5faf8;
+}
+
+.admin-page-control.is-disabled {
+  color: #a3acb9;
+  background: #f7f8fa;
+}
+
+.admin-page-number {
+  min-width: 42px;
+  color: #647184;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
 .admin-results-table thead th {
   padding-top: 11px;
   padding-bottom: 11px;
   border-bottom-color: var(--line);
-  color: #8791a5;
+  color: #647184;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -839,7 +1061,7 @@ input {
   padding-top: 13px;
   padding-bottom: 13px;
   border-bottom-color: #f0f2f6;
-  color: #4f5a70;
+  color: #435064;
   white-space: nowrap;
 }
 
@@ -893,7 +1115,7 @@ input {
 
 .admin-review-link,
 .admin-back-link {
-  color: var(--brand);
+  color: var(--admin-accent, var(--brand));
   font-size: 0.8rem;
   font-weight: 650;
   text-decoration: none;
@@ -923,7 +1145,7 @@ input {
 }
 
 .admin-detail-score strong {
-  color: var(--brand);
+  color: var(--admin-accent, var(--brand));
   font-size: 1.5rem;
   font-weight: 750;
   letter-spacing: -0.03em;
@@ -998,6 +1220,19 @@ input {
   background: #f7f8fb;
 }
 
+.answer-comparison > div.is-answer-correct,
+.answer-comparison > div.is-correct-answer {
+  background: #edf7f2;
+}
+
+.answer-comparison > div.is-answer-incorrect {
+  background: #fff1f0;
+}
+
+.answer-comparison > div.is-answer-unanswered {
+  background: #f4f5f7;
+}
+
 .answer-comparison > div > span {
   color: #8a94a8;
   font-size: 0.64rem;
@@ -1013,18 +1248,178 @@ input {
   letter-spacing: 0.04em;
 }
 
+@media (max-width: 640px) {
+  .admin-header {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .admin-header > div:first-child {
+    min-width: 0;
+  }
+
+  .admin-header h1 {
+    font-size: 1.65rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stat-card {
+    min-height: 108px;
+  }
+
+  .admin-stat-card > small {
+    line-height: 1.35;
+  }
+
+  .admin-results-panel {
+    padding: 15px 12px;
+  }
+
+  .admin-filter-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .admin-search-field {
+    grid-column: 1 / -1;
+  }
+
+  .admin-filter-button {
+    width: 100%;
+  }
+
+  .admin-list-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-pagination {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-results-panel .table-responsive {
+    overflow: visible;
+  }
+
+  .admin-results-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .admin-results-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .admin-results-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .admin-results-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+  }
+
+  .admin-results-table tbody td {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f2f6;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-results-table tbody td::before {
+    content: attr(data-label);
+    color: #748093;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .admin-results-table tbody td:first-child,
+  .admin-results-table tbody td:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-results-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-results-table .admin-player-name {
+    font-size: 1rem;
+  }
+
+  .admin-review-link {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    font-size: 0.86rem;
+  }
+
+  .admin-detail-score {
+    justify-items: start;
+    text-align: left;
+  }
+}
+
 #antiforgery-form {
   display: none;
 }
 
 @media (max-width: 900px) {
+  html {
+    overflow-x: clip;
+  }
+
   .app-shell {
     padding-right: 18px;
     padding-left: 18px;
   }
 
+  .game-page,
+  .game-layout,
+  .board-panel,
+  .clues-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .game-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .game-intro > p,
+  .game-status {
+    min-width: 0;
+  }
+
+  .game-status {
+    flex: initial;
   }
 
   .board-panel {
@@ -1038,6 +1433,28 @@ input {
 
   .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .join-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "welcome"
+      "form"
+      "support"
+      "footer";
+    row-gap: 18px;
+  }
+
+  .join-form {
+    padding: 18px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .join-footer {
+    padding-top: 0;
   }
 }
 
@@ -1056,6 +1473,11 @@ input {
     border-radius: 20px;
   }
 
+  .join-welcome .intro {
+    margin-bottom: 0;
+    font-size: 0.94rem;
+  }
+
   .rate-limit-instructions {
     padding: 14px;
     font-size: 0.83rem;
@@ -1065,51 +1487,87 @@ input {
     margin-bottom: 20px;
   }
 
-  .game-header {
-    grid-template-columns: 40px minmax(0, 1fr) auto;
+  .join-support {
     gap: 10px;
-    padding-bottom: 15px;
+  }
+
+  .join-note {
+    padding: 12px 13px;
+    font-size: 0.84rem;
+  }
+
+  .join-terms {
+    font-size: 0.82rem;
+  }
+
+  .game-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "back player"
+      "heading heading";
+    align-items: start;
+    gap: 10px 12px;
+    padding-bottom: 16px;
   }
 
   .back-link {
-    font-size: 1.2rem;
+    grid-area: back;
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    font-size: 0.9rem;
   }
 
   .back-link span {
-    display: none;
+    margin-left: 6px;
+  }
+
+  .game-heading {
+    grid-area: heading;
+    min-width: 0;
   }
 
   .game-heading .eyebrow {
-    font-size: 0.62rem;
+    font-size: 0.7rem;
   }
 
   .game-heading h1 {
-    font-size: 1.18rem;
-    line-height: 1.2;
+    margin-top: 5px;
+    font-size: clamp(1.3rem, 6vw, 1.6rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
   }
 
   .player-chip {
+    grid-area: player;
+    max-width: min(100%, 48vw);
+    min-height: 40px;
+    justify-self: end;
     gap: 6px;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
   }
 
   .player-avatar {
-    width: 31px;
-    height: 31px;
+    width: 32px;
+    height: 32px;
   }
 
   .game-intro {
     display: grid;
-    gap: 8px;
-    padding: 13px 1px 17px;
+    min-width: 0;
+    gap: 10px;
+    padding: 14px 1px 18px;
   }
 
   .game-intro > p {
-    font-size: 0.83rem;
+    min-width: 0;
+    font-size: 0.94rem;
+    line-height: 1.55;
   }
 
   .game-status {
-    font-size: 0.74rem;
+    min-width: 0;
+    font-size: 0.82rem;
   }
 
   .game-layout {
@@ -1117,22 +1575,29 @@ input {
   }
 
   .board-panel {
-    padding: 13px 10px 14px;
+    padding: 14px 12px 15px;
     border-radius: 15px;
   }
 
   .board-toolbar {
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .board-toolbar > div {
+    flex: 1 1 100%;
   }
 
   .progress-label {
-    font-size: 0.72rem;
+    color: #5f6b83;
+    font-size: 0.82rem;
   }
 
   .direction-toggle {
-    min-height: 40px;
-    padding: 0 9px;
-    font-size: 0.76rem;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 12px;
+    font-size: 0.86rem;
   }
 
   .crossword-board-wrap {
@@ -1149,7 +1614,7 @@ input {
   }
 
   .crossword-cell {
-    font-size: clamp(0.53rem, 4.5vw, 0.93rem);
+    font-size: clamp(0.6rem, 3.8vw, 0.9rem);
   }
 
   .square-number {
@@ -1163,16 +1628,17 @@ input {
   }
 
   .board-actions .btn {
-    min-height: 43px;
-    flex: 1 1 auto;
-    padding-right: 11px;
-    padding-left: 11px;
-    font-size: 0.8rem;
+    min-height: 46px;
+    flex: 1 1 120px;
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 0.88rem;
   }
 
   .keyboard-hint {
-    font-size: 0.7rem;
-    line-height: 1.45;
+    color: #6f7a91;
+    font-size: 0.82rem;
+    line-height: 1.5;
   }
 
   .admin-header {
@@ -1212,16 +1678,27 @@ input {
   }
 
   .clues-panel {
-    padding: 16px 12px 10px;
+    padding: 17px 14px 12px;
     border-radius: 15px;
   }
 
   .clue-button {
-    min-height: 62px;
-    padding: 10px 8px;
+    min-height: 66px;
+    gap: 6px 8px;
+    padding: 11px 8px;
+  }
+
+  .clue-number {
+    font-size: 0.88rem;
   }
 
   .clue-text {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .clue-length {
+    color: #6f7a91;
+    font-size: 0.76rem;
   }
 }

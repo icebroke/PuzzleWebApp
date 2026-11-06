@@ -13,9 +13,12 @@
             <h1>Keputusan keseluruhan</h1>
             <p class="admin-subtitle">@Model.CrosswordTitle</p>
         </div>
-        <form asp-action="Logout" method="post">
+        <form asp-action="Logout" method="post" data-ajax-form>
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-secondary admin-logout">Log keluar</button>
+            <button type="submit" class="btn btn-outline-secondary admin-logout" data-loading-text="Sedang log keluar…">
+                <span data-button-label>Log keluar</span>
+                <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+            </button>
         </form>
     </header>
 
@@ -29,11 +32,26 @@
     <section class="admin-results-panel">
         <div class="admin-panel-heading">
             <div><span class="panel-kicker">Peserta</span><h2>Keputusan pemain</h2></div>
-            <span class="clue-count">@Model.Attempts.Count</span>
+            <span class="clue-count">@Model.TotalFilteredAttempts</span>
         </div>
+        <form asp-action="Index" method="get" class="admin-filter-form">
+            <div class="admin-search-field">
+                <label for="player-search">Cari pemain</label>
+                <input id="player-search" name="q" type="search" value="@Model.SearchTerm" class="form-control" placeholder="Nama atau ID pemain" />
+            </div>
+            <div class="admin-status-field">
+                <label for="status-filter">Status</label>
+                <select id="status-filter" name="status" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Semua pemain</option>
+                    <option value="submitted" selected="@(Model.StatusFilter == "submitted")">Dihantar</option>
+                    <option value="in-progress" selected="@(Model.StatusFilter == "in-progress")">Sedang bermain</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary admin-filter-button">Tapis</button>
+        </form>
         @if (Model.Attempts.Count == 0)
         {
-            <p class="admin-empty">Belum ada pemain yang memulakan teka silang kata ini.</p>
+            <p class="admin-empty">@(Model.TotalAttempts == 0 ? "Belum ada pemain yang memulakan teka silang kata ini." : "Tiada pemain yang sepadan dengan carian ini.")</p>
         }
         else
         {
@@ -54,9 +72,9 @@
                     @foreach (var attempt in Model.Attempts)
                     {
                         <tr>
-                            <td class="admin-player-name">@attempt.PlayerName</td>
-                            <td><span class="admin-player-id">@attempt.PlayerId</span></td>
-                            <td>
+                            <td class="admin-player-name" data-label="Pemain">@attempt.PlayerName</td>
+                            <td data-label="ID pemain"><span class="admin-player-id">@attempt.PlayerId</span></td>
+                            <td data-label="Status">
                                 @if (attempt.SubmittedAtUtc.HasValue)
                                 {
                                     <span class="admin-status is-submitted">Dihantar</span>
@@ -66,8 +84,8 @@
                                     <span class="admin-status is-in-progress">Sedang bermain</span>
                                 }
                             </td>
-                            <td>@attempt.AnsweredCount / @attempt.TotalClues</td>
-                            <td>
+                            <td data-label="Dijawab">@attempt.AnsweredCount / @attempt.TotalClues</td>
+                            <td data-label="Betul">
                                 @if (attempt.SubmittedAtUtc.HasValue)
                                 {
                                     <strong>@attempt.CorrectCount</strong><span class="admin-score-total"> / @attempt.TotalClues</span>
@@ -77,7 +95,7 @@
                                     <span class="admin-score-total">—</span>
                                 }
                             </td>
-                            <td>
+                            <td data-label="Masa dihantar">
                                 @if (attempt.SubmittedAtUtc.HasValue)
                                 {
                                     @attempt.SubmittedAtUtc.Value.ToLocalTime().ToString("g")
@@ -87,12 +105,34 @@
                                     <span class="admin-score-total">—</span>
                                 }
                             </td>
-                            <td><a asp-action="Attempt" asp-route-id="@attempt.Id" class="admin-review-link">Semak jawapan <span aria-hidden="true">→</span></a></td>
+                            <td data-label="Semakan"><a asp-action="Attempt" asp-route-id="@attempt.Id" class="admin-review-link">Semak jawapan <span aria-hidden="true">→</span></a></td>
                         </tr>
                     }
                     </tbody>
                 </table>
             </div>
+            <footer class="admin-list-footer">
+                <p>Memaparkan <strong>@Model.FirstItemNumber–@Model.LastItemNumber</strong> daripada <strong>@Model.TotalFilteredAttempts</strong> pemain</p>
+                <nav class="admin-pagination" aria-label="Halaman keputusan pemain">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-action="Index" asp-route-q="@Model.SearchTerm" asp-route-status="@Model.StatusFilter" asp-route-page="@(Model.CurrentPage - 1)" class="admin-page-control">Sebelumnya</a>
+                    }
+                    else
+                    {
+                        <span class="admin-page-control is-disabled" aria-disabled="true">Sebelumnya</span>
+                    }
+                    <span class="admin-page-number">@Model.CurrentPage / @Model.TotalPages</span>
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-action="Index" asp-route-q="@Model.SearchTerm" asp-route-status="@Model.StatusFilter" asp-route-page="@(Model.CurrentPage + 1)" class="admin-page-control">Seterusnya</a>
+                    }
+                    else
+                    {
+                        <span class="admin-page-control is-disabled" aria-disabled="true">Seterusnya</span>
+                    }
+                </nav>
+            </footer>
         }
     </section>
 </main>

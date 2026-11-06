@@ -69,7 +69,7 @@ public class AdminController : Controller
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? q, string? status, int page = 1)
     {
         if (!IsAuthenticated())
         {
@@ -102,6 +102,30 @@ public class AdminController : Controller
             };
         }).ToList();
         var submitted = summaries.Where(attempt => attempt.SubmittedAtUtc.HasValue).ToList();
+        var searchTerm = q?.Trim() ?? string.Empty;
+        var statusFilter = status is "submitted" or "in-progress" ? status : string.Empty;
+        var filteredAttempts = summaries.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filteredAttempts = filteredAttempts.Where(attempt =>
+                attempt.PlayerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                || attempt.PlayerId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (statusFilter == "submitted")
+        {
+            filteredAttempts = filteredAttempts.Where(attempt => attempt.SubmittedAtUtc.HasValue);
+        }
+        else if (statusFilter == "in-progress")
+        {
+            filteredAttempts = filteredAttempts.Where(attempt => !attempt.SubmittedAtUtc.HasValue);
+        }
+
+        var totalFilteredAttempts = filteredAttempts.Count();
+        const int pageSize = 20;
+        var totalPages = Math.Max(1, (totalFilteredAttempts + pageSize - 1) / pageSize);
+        var currentPage = Math.Clamp(page, 1, totalPages);
 
         return View(new AdminOverviewViewModel
         {
@@ -110,7 +134,15 @@ public class AdminController : Controller
             SubmittedAttempts = submitted.Count,
             TotalCorrectAnswers = submitted.Sum(attempt => attempt.CorrectCount),
             TotalSubmittedAnswers = submitted.Sum(attempt => attempt.TotalClues),
-            Attempts = summaries
+            SearchTerm = searchTerm,
+            StatusFilter = statusFilter,
+            CurrentPage = currentPage,
+            PageSize = pageSize,
+            TotalFilteredAttempts = totalFilteredAttempts,
+            Attempts = filteredAttempts
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList()
         });
     }
 

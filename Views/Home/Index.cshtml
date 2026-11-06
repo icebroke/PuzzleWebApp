@@ -5,25 +5,13 @@
 
 <main class="join-page">
     <section class="join-card">
-        <div class="brand-mark" aria-hidden="true">✦</div> @* TODO: Change to MDHT logo *@
-        <p class="eyebrow">Cabaran integriti ringkas</p>
-        <p class="intro">@Model.CrosswordDescription</p>
+        <header class="join-welcome">
+            <img class="brand-mark mdht-logo" src="~/images/mdht-logo.png" alt="Majlis Daerah Hulu Terengganu" />
+            <h1>@Model.CrosswordTitle</h1>
+            <p class="intro">@Model.CrosswordDescription</p>
+        </header>
 
-        <div class="join-note">
-            <strong>Nota:</strong>
-            <span>Anda boleh menyambung kuiz dengan log masuk semula menggunakan MyKad yang sama.</span>
-        </div>
-
-        <div class="join-note">
-            <strong>Syarat-Syarat Pertandingan:</strong>
-            <span>1. Terbuka kepada semua warga kerja MDHT.</span>
-            <span>2. Pertandinngan di jalankan dalam 2 pusingan secara dalam talian.</span>
-            <span>3. Setiap peserta hanya dibenarkan jawab sekali bagi setiap pusingan.</span>
-            <span>4. Markah kedua-dua pusingan akan dikumpulkan untuk menentukan pemenang keseluruhan & keputusan adalah muktamad.</span>
-            <span>5. Peserta hendaklah mengisi maklumat diri dengan lengkap & tepat.</span>
-        </div>
-
-        <form asp-action="Join" method="post" class="join-form">
+        <form asp-action="Join" method="post" class="join-form" data-ajax-form>
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
             <div class="mb-3">
                 <label asp-for="PlayerName" class="form-label"></label>
@@ -35,8 +23,30 @@
                 <input asp-for="PlayerId" class="form-control form-control-lg" autocomplete="off" placeholder="Masukkan MyKad anda" />
                 <span asp-validation-for="PlayerId" class="field-validation"></span>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg w-100">Mula bermain <span aria-hidden="true">→</span></button>
+            <p class="form-action-feedback" role="status" aria-live="polite" hidden></p>
+            <button type="submit" class="btn btn-primary btn-lg w-100" data-loading-text="Sedang memulakan…">
+                <span data-button-label>Mula bermain →</span>
+                <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+            </button>
         </form>
+
+        <div class="join-support">
+            <div class="join-note">
+                <strong>Nota</strong>
+                <span>Anda boleh menyambung kuiz dengan log masuk semula menggunakan MyKad yang sama.</span>
+            </div>
+            <details class="join-terms" open>
+                <summary>Syarat-syarat pertandingan</summary>
+                <ol class="fw-bold">
+                    <li>Terbuka kepada semua warga kerja MDHT.</li>
+                    <li>Pertandingan dijalankan dalam 2 pusingan secara dalam talian.</li>
+                    <li>Setiap peserta hanya dibenarkan menjawab sekali bagi setiap pusingan.</li>
+                    <li>Markah kedua-dua pusingan akan dikumpulkan untuk menentukan pemenang keseluruhan dan keputusan adalah muktamad.</li>
+                    <li>Peserta hendaklah mengisi maklumat diri dengan lengkap dan tepat.</li>
+                </ol>
+            </details>
+        </div>
+
         <div class="join-footer">
             <p class="privacy-note">Data disimpan menggunakan MyKad pemain.</p>
             <a asp-controller="Admin" asp-action="Login" class="admin-entry-link">Pentadbir</a>
