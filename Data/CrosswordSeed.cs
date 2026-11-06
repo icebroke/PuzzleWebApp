@@ -1,4 +1,3 @@
-using System.Text.Json;
 using PuzzleWebApp.Models;
 using PuzzleWebApp.Services;
 
@@ -6,286 +5,78 @@ namespace PuzzleWebApp.Data;
 
 public static class CrosswordSeed
 {
-    private const int Rows = 16;
-    private const int Columns = 18;
+    private sealed record RoundSeed(string Title, string Description, List<(string Text, string Answer)> Entries);
 
     public static void EnsureSeeded(AppDbContext db)
     {
-        var clues = CreateClues();
-        ValidateLayout(clues);
-
-        var existing = db.Crosswords.SingleOrDefault(crossword => crossword.Id == 1);
-        if (existing is null)
+        foreach (var round in CreateRounds())
         {
-            if (db.Crosswords.Any())
+            if (db.Crosswords.Any(crossword => crossword.Title == round.Title))
             {
-                return;
+                continue;
+            }
+
+            var entries = round.Entries
+                .Select(entry => (entry.Text, Answer: NormalizeAnswer(entry.Answer)))
+                .ToList();
+            if (!CrosswordLayoutBuilder.TryBuild(entries, out var layout) || layout is null)
+            {
+                throw new InvalidOperationException($"The crossword answers for {round.Title} could not be arranged.");
             }
 
             db.Crosswords.Add(new Crossword
             {
-                Id = 1,
-                Title = "Kuiz Silang Kata Bulan Integriti MDHT 2026",
-                Description = "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
-                Rows = Rows,
-                Columns = Columns,
-                Clues = clues
+                Title = round.Title,
+                Description = round.Description,
+                Rows = layout.Rows,
+                Columns = layout.Columns,
+                Clues = layout.Clues
             });
-            db.SaveChanges();
-            return;
-        }
-
-        var existingClues = db.CrosswordClues
-            .Where(clue => clue.CrosswordId == existing.Id)
-            .ToList();
-        if (!MatchesTemplate(existingClues, clues))
-        {
-            throw new InvalidOperationException(
-                "The saved crossword clues do not match the layout template, so the grid cannot be updated safely.");
-        }
-
-        var desiredByKey = clues.ToDictionary(clue => (clue.Number, clue.Direction));
-        var layoutChanged = existing.Rows != Rows ||
-                            existing.Columns != Columns ||
-                            existingClues.Any(clue =>
-                            {
-                                var desired = desiredByKey[(clue.Number, clue.Direction)];
-                                return clue.StartRow != desired.StartRow ||
-                                       clue.StartColumn != desired.StartColumn;
-                            });
-
-        if (layoutChanged)
-        {
-            var attempts = db.CrosswordAttempts
-                .Where(attempt => attempt.CrosswordId == existing.Id)
-                .ToList();
-            foreach (var attempt in attempts)
-            {
-                attempt.AnswersJson = RebaseAnswers(attempt.AnswersJson, existingClues, desiredByKey);
-            }
-
-            foreach (var clue in existingClues)
-            {
-                var desired = desiredByKey[(clue.Number, clue.Direction)];
-                clue.StartRow = desired.StartRow;
-                clue.StartColumn = desired.StartColumn;
-            }
-
-            existing.Rows = Rows;
-            existing.Columns = Columns;
         }
 
         db.SaveChanges();
     }
 
-    private static List<CrosswordClue> CreateClues() =>
+    private static List<RoundSeed> CreateRounds() =>
     [
-        CreateClue(1, "Amalan menerima atau memberi sesuatu yang boleh mempengaruhi keputusan rasmi.", "HADIAH", CrosswordDirection.Across, 9, 9),
-        CreateClue(2, "Sikap jujur, berpegang teguh pada prinsip moral dan tidak menyalahgunakan kuasa", "INTEGRITI", CrosswordDirection.Down, 5, 5),
-        CreateClue(3, "Perbuatan menggunakan kedudukan atau jawatan untuk memperoleh manfaat peribadi secara tidak wajar.", "SALAHGUNAKUASA", CrosswordDirection.Down, 0, 16),
-        CreateClue(4, "Peraturan atau panduan yang menetapkan tingkah laku dan etika penjawat awam.", "KODETIKA", CrosswordDirection.Down, 7, 0),
-        CreateClue(5, "Perbuatan memberi atau menerima suapan sebagai dorongan untuk melakukan sesuatu yang berkaitan dengan tugas.", "SUAPAN", CrosswordDirection.Across, 11, 12),
-        CreateClue(6, "Sistem dan proses untuk memastikan organisasi diurus secara cekap, berkesan dan beretika.", "GOVERNANS", CrosswordDirection.Across, 0, 8),
-        CreateClue(7, "Amalan keterbukaan dalam penyampaian maklumat dan proses membuat keputusan.", "KETELUSAN", CrosswordDirection.Down, 2, 10),
-        CreateClue(8, "Agensi yang bertanggungjawab menjalankan fungsi pencegahan dan penyiasatan rasuah di Malaysia.", "SPRM", CrosswordDirection.Down, 12, 9),
-        CreateClue(9, "Keadaan apabila kepentingan peribadi seseorang boleh mempengaruhi pelaksanaan tugas rasmi.", "KONFLIKKEPENTINGAN", CrosswordDirection.Across, 13, 0),
-        CreateClue(10, "Individu yang melaporkan salah laku atau pelanggaran integriti melalui saluran yang ditetapkan.", "PEMBERIMAKLUMAT", CrosswordDirection.Across, 15, 2),
-        CreateClue(11, "Apakah tindakan yang perlu dilakukan oleh penjawat awam apabila mengetahui berlaku salah laku atau pelanggaran prosedur dalam organisasi?", "LAPORAN", CrosswordDirection.Down, 1, 7),
-        CreateClue(12, "Prinsip yang mewajibkan penjawat awam bertanggungjawab terhadap tindakan dan keputusan mereka.", "AKAUNTABILITI", CrosswordDirection.Across, 6, 1),
-        CreateClue(13, "Nilai yang bermaksud melaksanakan tanggungjawab dengan penuh kepercayaan dan kejujuran.", "AMANAH", CrosswordDirection.Down, 0, 14),
-        CreateClue(14, "Tindakan memastikan sesuatu keputusan dibuat berdasarkan peraturan, bukti dan kepentingan awam.", "KEWAJARAN", CrosswordDirection.Across, 2, 0),
-        CreateClue(15, "Proses pemeriksaan dan penilaian rekod kewangan serta pematuhan organisasi.", "AUDIT", CrosswordDirection.Across, 11, 2)
+        new RoundSeed("Kuiz Silang Kata MDHT 2026 - Pusingan 1", "Situasi integriti dan tadbir urus untuk Pusingan 1.",
+        [
+            ("Seorang pegawai terlibat dalam penilaian sebutharga yang disertai oleh syarikat milik ahli keluarganya. Apakah keadaan yang perlu dikenal pasti dan diuruskan oleh pegawai tersebut?", "Konflik Kepentingan"),
+            ("Seorang ketua jabatan meluluskan sesuatu pembayaran tanpa menyemak dokumen sokongan, kemudian berlaku kerugian kepada organisasi. Apakah prinsip yang perlu dipertanggungjawabkan?", "Akauntabiliti"),
+            ("Seorang pegawai menyediakan laporan prestasi jabatan dengan memasukkan angka yang telah diubah supaya pencapaian kelihatan lebih baik daripada keadaan sebenar. Apakah nilai yang telah dicabuli?", "Integriti"),
+            ("Seorang pegawai mencadangkan anak saudaranya dilantik ke jawatan kosong tanpa melalui proses pemilihan yang adil. Apakah amalan ini dikenali sebagai?", "Nepotisme"),
+            ("Seorang kakitangan mengetahui terdapat tuntutan perjalanan palsu yang dibuat oleh rakan sekerjanya. Dia membuat laporan melalui saluran rasmi organisasi. Apakah tindakan yang telah dilakukan?", "Pelaporan"),
+            ("Seorang pegawai berkongsi dokumen dalaman yang belum diluluskan untuk edaran kepada pihak luar tanpa kebenaran. Apakah prinsip yang telah dilanggar?", "Kerahsiaan"),
+            ("Seorang pegawai menerima arahan untuk meluluskan pembayaran walaupun kerja belum disahkan siap. Apakah nilai yang perlu menjadi pegangan pegawai tersebut ketika menghadapi tekanan ini?", "Ketegasan"),
+            ("Seorang pegawai memberikan layanan istimewa kepada pemohon lesen kerana pemohon tersebut merupakan kenalan rapatnya. Apakah prinsip yang telah diketepikan?", "Keadilan"),
+            ("Seorang pegawai menggunakan kenderaan rasmi jabatan untuk urusan peribadi pada hujung minggu tanpa kebenaran. Apakah perbuatan ini dikategorikan sebagai?", "Salahguna Aset"),
+            ("Seorang pegawai memastikan hanya syarikat milik kenalan rapatnya dimaklumkan tentang peluang perolehan supaya syarikat tersebut mendapat kelebihan. Apakah amalan ini dikenali sebagai?", "Kronisme"),
+            ("Seorang pegawai dilantik sebagai ahli jawatankuasa penilaian, tetapi mempunyai kepentingan kewangan dalam salah satu syarikat yang dinilai. Apakah tindakan awal yang perlu dibuat oleh pegawai tersebut?", "Pengisytiharan"),
+            ("Sebelum melaksanakan sesuatu urusan kewangan, pegawai memastikan semua tindakan mengikut pekeliling dan prosedur yang sedang berkuat kuasa. Apakah amalan ini dikenali sebagai?", "Pematuhan"),
+            ("Seorang penjawat awam memulangkan wang lebihan bayaran yang diterimanya walaupun tiada pihak menyedari kesilapan tersebut. Apakah nilai yang ditunjukkan?", "Amanah"),
+            ("Pihak pengurusan memastikan setiap keputusan perolehan mempunyai justifikasi, rekod pertimbangan dan proses kelulusan yang jelas. Apakah konsep pengurusan yang diamalkan?", "Tadbir Urus"),
+            ("Sebuah jabatan menyediakan mekanisme rasmi untuk menerima aduan berkaitan salah laku kakitangan, merekodkan aduan dan menjalankan tindakan susulan. Apakah mekanisme ini?", "Saluran Aduan")
+        ]),
+        new RoundSeed("Kuiz Silang Kata MDHT 2026 - Pusingan 2", "Amalan integriti dan kawalan organisasi untuk Pusingan 2.",
+        [
+            ("Bagi mengelakkan seorang pegawai mengawal keseluruhan proses pembayaran, organisasi perlu mengamalkan __________ supaya tugas penyediaan, semakan dan kelulusan dilaksanakan oleh individu yang berbeza.", "Pengasingan Tugas"),
+            ("Kegagalan merekod kutipan hasil dengan betul sehingga menyebabkan wang yang sepatutnya diterima oleh jabatan tidak dapat dikesan dikenali sebagai __________ hasil.", "Ketirisan"),
+            ("Seorang pegawai mengubah maklumat pada resit rasmi untuk menunjukkan jumlah bayaran yang berbeza daripada jumlah sebenar. Tindakan ini merupakan __________ dokumen.", "Pemalsuan"),
+            ("Dua syarikat berpakat untuk menetapkan harga tawaran masing-masing bagi memastikan salah satu daripada mereka berjaya memperoleh kontrak. Perbuatan ini dikenali sebagai __________.", "Pakatan Sulit"),
+            ("Seorang pegawai menolak permohonan pelanggan yang layak hanya kerana latar belakang peribadinya. Tindakan tersebut merupakan satu bentuk __________.", "Diskriminasi"),
+            ("Dalam proses pengambilan pekerja, calon dipilih berdasarkan kelayakan, kebolehan dan pencapaian tanpa dipengaruhi hubungan peribadi. Prinsip ini dikenali sebagai __________.", "Meritokrasi"),
+            ("Seorang kakitangan sentiasa menjaga tingkah laku, memberikan perkhidmatan berkualiti dan melaksanakan tugas mengikut standard jawatan yang disandang. Sikap ini mencerminkan __________.", "Profesionalisme"),
+            ("Sebelum melantik kontraktor, jabatan menyemak latar belakang, kemampuan kewangan dan rekod pengalaman kontraktor bagi memastikan kesesuaiannya. Proses ini dikenali sebagai __________.", "Usaha Wajar"),
+            ("Organisasi menetapkan had kuasa melulus, pemeriksaan dokumen dan pengesahan transaksi bagi mengurangkan risiko kesilapan serta penyelewengan. Kesemua langkah ini merupakan __________ organisasi.", "Kawalan Dalaman"),
+            ("Sebelum melaksanakan sesuatu program, jabatan mengenal pasti kemungkinan masalah, menilai kesannya dan menyediakan langkah pencegahan. Proses ini dikenali sebagai __________.", "Pengurusan risiko"),
+            ("Ketua jabatan menyemak kemajuan pelaksanaan sesuatu projek dari semasa ke semasa bagi memastikan kerja berjalan mengikut perancangan. Aktiviti ini dikenali sebagai __________.", "Pemantauan"),
+            ("Apabila menerima aduan salah laku, pihak yang diberi kuasa perlu mendapatkan keterangan, mengumpulkan bukti dan meneliti fakta sebelum membuat keputusan. Proses ini dikenali sebagai __________.", "Siasatan"),
+            ("Kakitangan yang didapati melanggar peraturan perkhidmatan boleh dikenakan __________ mengikut peraturan yang berkuat kuasa.", "Tindakan Tatatertib"),
+            ("Pembelian peralatan yang tidak diperlukan sehingga menyebabkan penggunaan wang awam secara tidak berfaedah merupakan satu bentuk __________.", "Pembaziran"),
+            ("Organisasi menetapkan sasaran kerja tahunan dan menilai pencapaian kakitangan berdasarkan hasil kerja serta tanggungjawab yang diberikan. Proses ini dikenali sebagai __________.", "Penilaian Prestasi")
+        ])
     ];
 
-    private static void ValidateLayout(IReadOnlyCollection<CrosswordClue> clues)
-    {
-        if (clues.Select(clue => (clue.StartRow, clue.StartColumn)).Distinct().Count() != clues.Count)
-        {
-            throw new InvalidOperationException("Each numbered crossword answer must have its own start cell.");
-        }
-
-        var lettersByCell = new Dictionary<(int Row, int Column), List<(CrosswordClue Clue, char Letter)>>();
-        foreach (var clue in clues)
-        {
-            if (string.IsNullOrEmpty(clue.Answer) || clue.Answer.Any(letter => letter is < 'A' or > 'Z'))
-            {
-                throw new InvalidOperationException($"Clue {clue.Number} must have an answer containing letters only.");
-            }
-
-            for (var index = 0; index < clue.Answer.Length; index++)
-            {
-                var row = clue.StartRow + (clue.Direction == CrosswordDirection.Down ? index : 0);
-                var column = clue.StartColumn + (clue.Direction == CrosswordDirection.Across ? index : 0);
-                if (row < 0 || row >= Rows || column < 0 || column >= Columns)
-                {
-                    throw new InvalidOperationException($"Clue {clue.Number} extends outside the crossword grid.");
-                }
-
-                var cell = (row, column);
-                if (!lettersByCell.TryGetValue(cell, out var occupants))
-                {
-                    occupants = [];
-                    lettersByCell.Add(cell, occupants);
-                }
-
-                occupants.Add((clue, clue.Answer[index]));
-            }
-        }
-
-        var intersections = new Dictionary<CrosswordClue, HashSet<CrosswordClue>>();
-        foreach (var clue in clues)
-        {
-            intersections.Add(clue, []);
-        }
-
-        foreach (var occupants in lettersByCell.Values)
-        {
-            var across = occupants.Where(item => item.Clue.Direction == CrosswordDirection.Across).ToList();
-            var down = occupants.Where(item => item.Clue.Direction == CrosswordDirection.Down).ToList();
-            if (across.Count > 1 || down.Count > 1)
-            {
-                throw new InvalidOperationException("Two answers in the same direction occupy the same crossword cell.");
-            }
-
-            if (across.Count == 1 && down.Count == 1)
-            {
-                if (across[0].Letter != down[0].Letter)
-                {
-                    throw new InvalidOperationException(
-                        $"Clues {across[0].Clue.Number} and {down[0].Clue.Number} cross on different letters.");
-                }
-
-                intersections[across[0].Clue].Add(down[0].Clue);
-                intersections[down[0].Clue].Add(across[0].Clue);
-            }
-        }
-
-        if (intersections.Any(pair => pair.Value.Count == 0))
-        {
-            throw new InvalidOperationException("Every crossword answer must intersect at least one other answer.");
-        }
-
-        var connected = new HashSet<CrosswordClue>();
-        var pending = new Stack<CrosswordClue>();
-        pending.Push(clues.First());
-        while (pending.TryPop(out var clue))
-        {
-            if (connected.Add(clue))
-            {
-                foreach (var crossing in intersections[clue])
-                {
-                    pending.Push(crossing);
-                }
-            }
-        }
-
-        if (connected.Count != clues.Count)
-        {
-            throw new InvalidOperationException("All crossword answers must be connected through matching intersections.");
-        }
-
-        var occupiedCells = lettersByCell.Keys.ToHashSet();
-        foreach (var clue in clues)
-        {
-            var before = clue.Direction == CrosswordDirection.Across
-                ? (clue.StartRow, clue.StartColumn - 1)
-                : (clue.StartRow - 1, clue.StartColumn);
-            var after = clue.Direction == CrosswordDirection.Across
-                ? (clue.StartRow, clue.StartColumn + clue.Answer.Length)
-                : (clue.StartRow + clue.Answer.Length, clue.StartColumn);
-            if (occupiedCells.Contains(before) || occupiedCells.Contains(after))
-            {
-                throw new InvalidOperationException($"Clue {clue.Number} would create an unintended extra letter run.");
-            }
-        }
-    }
-
-    private static bool MatchesTemplate(
-        IReadOnlyCollection<CrosswordClue> existing,
-        IReadOnlyCollection<CrosswordClue> template) =>
-        existing.Count == template.Count &&
-        template.All(expected => existing.Any(clue =>
-            clue.Number == expected.Number &&
-            clue.Direction == expected.Direction &&
-            clue.Answer.Equals(expected.Answer, StringComparison.OrdinalIgnoreCase)));
-
-    private static string RebaseAnswers(
-        string answersJson,
-        IEnumerable<CrosswordClue> existingClues,
-        IReadOnlyDictionary<(int Number, CrosswordDirection Direction), CrosswordClue> desiredByKey)
-    {
-        var savedAnswers = JsonSerializer.Deserialize<Dictionary<string, string>>(answersJson)
-            ?? throw new InvalidOperationException("The saved crossword progress is not valid JSON.");
-        var rebasedAnswers = new Dictionary<string, string>(StringComparer.Ordinal);
-        var conflictingCells = new HashSet<string>(StringComparer.Ordinal);
-        var existingCellKeys = existingClues
-            .SelectMany(clue => Enumerable.Range(0, clue.Answer.Length).Select(index =>
-                CrosswordScoring.GetCellKey(
-                    clue.StartRow + (clue.Direction == CrosswordDirection.Down ? index : 0),
-                    clue.StartColumn + (clue.Direction == CrosswordDirection.Across ? index : 0))))
-            .ToHashSet(StringComparer.Ordinal);
-        if (savedAnswers.Keys.Any(key => !existingCellKeys.Contains(key)))
-        {
-            throw new InvalidOperationException("Saved crossword progress contains cells outside the existing grid.");
-        }
-
-        foreach (var clue in existingClues)
-        {
-            var desired = desiredByKey[(clue.Number, clue.Direction)];
-            for (var index = 0; index < clue.Answer.Length; index++)
-            {
-                var oldRow = clue.StartRow + (clue.Direction == CrosswordDirection.Down ? index : 0);
-                var oldColumn = clue.StartColumn + (clue.Direction == CrosswordDirection.Across ? index : 0);
-                if (!savedAnswers.TryGetValue(CrosswordScoring.GetCellKey(oldRow, oldColumn), out var letter))
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrEmpty(letter) || letter.Length != 1 || !char.IsLetter(letter[0]))
-                {
-                    throw new InvalidOperationException("Saved crossword cells must contain exactly one letter.");
-                }
-
-                var newRow = desired.StartRow + (desired.Direction == CrosswordDirection.Down ? index : 0);
-                var newColumn = desired.StartColumn + (desired.Direction == CrosswordDirection.Across ? index : 0);
-                var newCellKey = CrosswordScoring.GetCellKey(newRow, newColumn);
-                if (conflictingCells.Contains(newCellKey))
-                {
-                    continue;
-                }
-
-                if (rebasedAnswers.TryGetValue(newCellKey, out var existingLetter) &&
-                    !existingLetter.Equals(letter, StringComparison.OrdinalIgnoreCase))
-                {
-                    // A previously shared cell cannot retain conflicting letters at a new crossing.
-                    rebasedAnswers.Remove(newCellKey);
-                    conflictingCells.Add(newCellKey);
-                    continue;
-                }
-
-                rebasedAnswers[newCellKey] = letter.ToUpperInvariant();
-            }
-        }
-
-        return JsonSerializer.Serialize(rebasedAnswers);
-    }
-
-    private static CrosswordClue CreateClue(
-        int number,
-        string text,
-        string answer,
-        CrosswordDirection direction,
-        int row,
-        int column)
-    {
-        return new CrosswordClue
-        {
-            Number = number,
-            Text = text,
-            Answer = answer,
-            Direction = direction,
-            StartRow = row,
-            StartColumn = column
-        };
-    }
+    private static string NormalizeAnswer(string answer) =>
+        new(answer.Where(char.IsLetter).Select(char.ToUpperInvariant).ToArray());
 }

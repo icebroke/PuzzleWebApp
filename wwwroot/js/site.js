@@ -33,7 +33,7 @@
     function reindexClues() {
       const rows = [...clueList.querySelectorAll("[data-clue-row]")];
       rows.forEach((row, index) => {
-        row.querySelector("legend").innerHTML = `Petunjuk ${index + 1}`;
+        row.querySelector("legend").textContent = `Petunjuk ${index + 1}`;
         const removeButton = row.querySelector("[data-remove-clue]");
         removeButton.setAttribute("aria-label", `Buang petunjuk ${index + 1}`);
 
@@ -44,17 +44,6 @@
           field.id = id;
           row.querySelector(`[data-label='${property}']`).htmlFor = id;
         });
-
-        row.querySelectorAll("input[name^='Clues['], select[name^='Clues[']").forEach((field) => {
-          if (field.dataset.name) return;
-          const property = field.name.match(/\]\.([A-Za-z]+)/)?.[1];
-          if (!property) return;
-          const id = `Clues_${index}__${property}`;
-          const label = row.querySelector(`label[for='${field.id}']`);
-          field.name = `Clues[${index}].${property}`;
-          field.id = id;
-          if (label) label.htmlFor = id;
-        });
       });
     }
 
@@ -62,8 +51,6 @@
       const addButton = event.target.closest("[data-add-clue]");
       if (addButton) {
         const row = clueTemplate.content.firstElementChild.cloneNode(true);
-        const nextNumber = clueList.querySelectorAll("[data-clue-row]").length + 1;
-        row.querySelector("[data-name='Number']").value = nextNumber;
         clueList.append(row);
         reindexClues();
         row.querySelector("[data-name='Text']")?.focus();
@@ -159,13 +146,13 @@
         }
 
         const message =
-          documentFromResponse.querySelector(".validation-summary")
+          documentFromResponse
+            .querySelector(".validation-summary")
             ?.textContent.trim() ||
-          documentFromResponse.querySelector('[role="alert"]')
+          documentFromResponse
+            .querySelector('[role="alert"]')
             ?.textContent.trim();
-        throw new Error(
-          message || "Permintaan tidak berjaya. Sila cuba lagi.",
-        );
+        throw new Error(message || "Permintaan tidak berjaya. Sila cuba lagi.");
       }
 
       if (!response.ok) {

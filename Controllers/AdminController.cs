@@ -199,8 +199,8 @@ public class AdminController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        NormalizeAndValidatePuzzle(model);
-        if (!ModelState.IsValid)
+        var layout = BuildPuzzleLayout(model);
+        if (!ModelState.IsValid || layout is null)
         {
             return View("PuzzleForm", model);
         }
@@ -209,9 +209,9 @@ public class AdminController : Controller
         {
             Title = model.Title,
             Description = model.Description,
-            Rows = model.Rows,
-            Columns = model.Columns,
-            Clues = model.Clues.Select(ToClue).ToList()
+            Rows = layout.Rows,
+            Columns = layout.Columns,
+            Clues = layout.Clues
         });
         await _db.SaveChangesAsync();
         TempData["AdminNotice"] = "Teka silang kata baharu telah ditambah dan kini aktif.";
@@ -255,20 +255,20 @@ public class AdminController : Controller
         }
 
         model.Id = id;
-        NormalizeAndValidatePuzzle(model);
-        if (!ModelState.IsValid)
+        var layout = BuildPuzzleLayout(model);
+        if (!ModelState.IsValid || layout is null)
         {
             return View("PuzzleForm", model);
         }
 
         crossword.Title = model.Title;
         crossword.Description = model.Description;
-        crossword.Rows = model.Rows;
-        crossword.Columns = model.Columns;
+        crossword.Rows = layout.Rows;
+        crossword.Columns = layout.Columns;
         await using var transaction = await _db.Database.BeginTransactionAsync();
         _db.CrosswordClues.RemoveRange(crossword.Clues);
         await _db.SaveChangesAsync();
-        crossword.Clues = model.Clues.Select(ToClue).ToList();
+        crossword.Clues = layout.Clues;
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         TempData["AdminNotice"] = "Perubahan teka silang kata telah disimpan.";
@@ -394,7 +394,7 @@ public class AdminController : Controller
         .OrderByDescending(crossword => crossword.CreatedAtUtc)
         .ThenByDescending(crossword => crossword.Id);
 
-    private void NormalizeAndValidatePuzzle(AdminPuzzleEditViewModel model)
+    private CrosswordLayout? BuildPuzzleLayout(AdminPuzzleEditViewModel model)
     {
         model.Title = model.Title?.Trim() ?? string.Empty;
         model.Description = model.Description?.Trim() ?? string.Empty;
@@ -408,86 +408,46 @@ public class AdminController : Controller
                 .ToArray());
         }
 
-        if (model.Clues.Count == 0)
+        if (model.Clues.Count < 2)
         {
-            ModelState.AddModelError(nameof(model.Clues), "Tambah sekurang-kurangnya satu petunjuk.");
-            return;
+            ModelState.AddModelError(nameof(model.Clues), "Masukkan sekurang-kurangnya dua petunjuk supaya jawapan boleh bersilang.");
+            return null;
         }
 
-        if (model.Clues.GroupBy(clue => (clue.Number, clue.Direction)).Any(group => group.Count() > 1))
+        for (var index = 0; index < model.Clues.Count; index++)
         {
-            ModelState.AddModelError(nameof(model.Clues), "Nombor petunjuk tidak boleh berulang dalam arah yang sama.");
-        }
-
-        var occupied = new Dictionary<(int Row, int Column), List<(CrosswordDirection Direction, char Letter)>>();
-        foreach (var clue in model.Clues)
-        {
-            if (string.IsNullOrWhiteSpace(clue.Text) || string.IsNullOrEmpty(clue.Answer) ||
-                clue.Answer.Any(letter => letter is < 'A' or > 'Z'))
+            var answer = model.Clues[index].Answer;
+            if (answer.Length < 2 || answer.Any(letter => letter is < 'A' or > 'Z'))
             {
-                if (!string.IsNullOrEmpty(clue.Answer) && clue.Answer.Any(letter => letter is < 'A' or > 'Z'))
-                {
-                    ModelState.AddModelError(nameof(model.Clues), $"Jawapan petunjuk {clue.Number} mesti menggunakan huruf A hingga Z sahaja.");
-                }
-                continue;
-            }
-
-            for (var index = 0; index < clue.Answer.Length; index++)
-            {
-                var row = clue.StartRow + (clue.Direction == CrosswordDirection.Down ? index : 0);
-                var column = clue.StartColumn + (clue.Direction == CrosswordDirection.Across ? index : 0);
-                if (row >= model.Rows || column >= model.Columns)
-                {
-                    ModelState.AddModelError(nameof(model.Clues), $"Petunjuk {clue.Number} melangkaui grid {model.Rows} × {model.Columns}.");
-                    break;
-                }
-
-                var cell = (row, column);
-                if (!occupied.TryGetValue(cell, out var letters))
-                {
-                    letters = [];
-                    occupied.Add(cell, letters);
-                }
-
-                letters.Add((clue.Direction, clue.Answer[index]));
+                ModelState.AddModelError($"Clues[{index}].Answer", "Jawapan mesti mengandungi sekurang-kurangnya dua huruf A hingga Z.");
             }
         }
 
-        if (occupied.Values.Any(letters =>
-                letters.Count(item => item.Direction == CrosswordDirection.Across) > 1 ||
-                letters.Count(item => item.Direction == CrosswordDirection.Down) > 1 ||
-                letters.Select(item => item.Letter).Distinct().Count() > 1))
+        if (!ModelState.IsValid)
         {
-            ModelState.AddModelError(nameof(model.Clues), "Petunjuk bertindih atau jawapan pada persilangan tidak sepadan.");
+            return null;
         }
+
+        var entries = model.Clues.Select(clue => (clue.Text, clue.Answer)).ToList();
+        if (!CrosswordLayoutBuilder.TryBuild(entries, out var layout))
+        {
+            ModelState.AddModelError(nameof(model.Clues), "Sistem tidak dapat menyusun jawapan ini sebagai teka silang kata. Pastikan jawapan berkongsi huruf yang boleh disilang.");
+            return null;
+        }
+
+        return layout;
     }
-
-    private static CrosswordClue ToClue(AdminPuzzleClueEditViewModel clue) => new()
-    {
-        Number = clue.Number,
-        Text = clue.Text.Trim(),
-        Answer = clue.Answer,
-        StartRow = clue.StartRow,
-        StartColumn = clue.StartColumn,
-        Direction = clue.Direction
-    };
 
     private static AdminPuzzleEditViewModel ToEditModel(Crossword crossword) => new()
     {
         Id = crossword.Id,
         Title = crossword.Title,
         Description = crossword.Description,
-        Rows = crossword.Rows,
-        Columns = crossword.Columns,
         Clues = crossword.Clues.OrderBy(clue => clue.Number).ThenBy(clue => clue.Direction)
             .Select(clue => new AdminPuzzleClueEditViewModel
             {
-                Number = clue.Number,
                 Text = clue.Text,
-                Answer = clue.Answer,
-                StartRow = clue.StartRow,
-                StartColumn = clue.StartColumn,
-                Direction = clue.Direction
+                Answer = clue.Answer
             }).ToList()
     };
 

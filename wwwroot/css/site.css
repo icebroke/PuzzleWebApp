@@ -1176,10 +1176,15 @@ input {
   padding: clamp(16px, 3vw, 24px);
 }
 
-.puzzle-metadata-grid,
-.puzzle-clue-fields {
+.puzzle-metadata-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.puzzle-clue-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
   gap: 14px;
 }
 
@@ -1214,6 +1219,13 @@ input {
 
 .puzzle-clue-heading {
   margin-bottom: 14px;
+}
+
+.puzzle-layout-note {
+  margin: -4px 0 15px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .puzzle-add-clue {
@@ -1547,9 +1559,13 @@ input {
     justify-content: flex-end;
   }
 
-  .puzzle-metadata-grid,
-  .puzzle-clue-fields {
+  .puzzle-metadata-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .puzzle-clue-fields {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
 

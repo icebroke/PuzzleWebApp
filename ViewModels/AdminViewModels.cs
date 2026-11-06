@@ -40,20 +40,11 @@ public class AdminPuzzleEditViewModel
     [System.ComponentModel.DataAnnotations.StringLength(1000)]
     public string Description { get; set; } = string.Empty;
 
-    [System.ComponentModel.DataAnnotations.Range(3, 30)]
-    public int Rows { get; set; } = 15;
-
-    [System.ComponentModel.DataAnnotations.Range(3, 30)]
-    public int Columns { get; set; } = 15;
-
     public List<AdminPuzzleClueEditViewModel> Clues { get; set; } = [];
 }
 
 public class AdminPuzzleClueEditViewModel
 {
-    [System.ComponentModel.DataAnnotations.Range(1, 999)]
-    public int Number { get; set; } = 1;
-
     [System.ComponentModel.DataAnnotations.Required]
     [System.ComponentModel.DataAnnotations.StringLength(240)]
     public string Text { get; set; } = string.Empty;
@@ -61,14 +52,6 @@ public class AdminPuzzleClueEditViewModel
     [System.ComponentModel.DataAnnotations.Required]
     [System.ComponentModel.DataAnnotations.StringLength(30)]
     public string Answer { get; set; } = string.Empty;
-
-    [System.ComponentModel.DataAnnotations.Range(0, 29)]
-    public int StartRow { get; set; }
-
-    [System.ComponentModel.DataAnnotations.Range(0, 29)]
-    public int StartColumn { get; set; }
-
-    public PuzzleWebApp.Models.CrosswordDirection Direction { get; set; }
 }
 
 public class AdminOverviewViewModel
