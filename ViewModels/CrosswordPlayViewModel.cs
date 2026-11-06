@@ -10,7 +10,10 @@ public class CrosswordPlayViewModel
     public int Rows { get; set; }
     public int Columns { get; set; }
     public int AnsweredCount { get; set; }
+    public int TimeLimitMinutes { get; set; }
+    public int RemainingSeconds { get; set; }
     public bool IsSubmitted { get; set; }
+    public bool TimeExpired { get; set; }
     public DateTime? LastSavedAtUtc { get; set; }
     public List<CrosswordCellViewModel> Cells { get; set; } = [];
     public List<CrosswordClueViewModel> Clues { get; set; } = [];

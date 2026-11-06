@@ -505,6 +505,35 @@ input {
   font-size: 0.82rem;
 }
 
+.puzzle-timer {
+  display: grid;
+  gap: 2px;
+  min-width: 116px;
+  color: #34425c;
+  text-align: right;
+}
+
+.puzzle-timer-label {
+  color: #78839a;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.puzzle-timer strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.puzzle-timer.is-urgent,
+.puzzle-timer.is-expired {
+  color: #a63e44;
+}
+
+.puzzle-timer.is-stopped {
+  color: #28665f;
+}
+
 .direction-toggle {
   display: inline-flex;
   min-height: 42px;
@@ -1915,6 +1944,11 @@ input {
 
   .board-toolbar > div {
     flex: 1 1 100%;
+  }
+
+  .puzzle-timer {
+    min-width: 0;
+    text-align: left;
   }
 
   .progress-label {

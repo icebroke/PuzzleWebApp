@@ -14,6 +14,8 @@
   const clearButton = root.querySelector("#clear-answers");
   const submissionBanner = root.querySelector("#submission-banner");
   const submissionFeedback = root.querySelector("#submission-feedback");
+  const puzzleTimer = root.querySelector("#puzzle-timer");
+  const remainingTime = root.querySelector("#remaining-time");
   const token = root.querySelector(
     'input[name="__RequestVerificationToken"]',
   ).value;
@@ -24,6 +26,7 @@
   let activeKey = "";
   let activeInput = null;
   let saveTimer;
+  let countdownTimer;
   let saveQueue = Promise.resolve();
 
   const keyFor = (input, direction) =>
@@ -195,6 +198,65 @@
     saveStatus.textContent = "Perubahan belum disimpan";
   }
 
+  function submitTimedOutPuzzle() {
+    if (!puzzleTimer || puzzleTimer.dataset.running !== "true") {
+      return;
+    }
+
+    if (puzzleTimer.dataset.submitting === "true") {
+      return;
+    }
+    puzzleTimer.dataset.submitting = "true";
+    window.clearTimeout(saveTimer);
+    window.clearInterval(countdownTimer);
+    puzzleTimer.classList.add("is-expired");
+    puzzleTimer.querySelector(".puzzle-timer-label").textContent = "Masa tamat";
+    remainingTime.textContent = "00:00";
+    inputs.forEach((input) => (input.disabled = true));
+    if (clearButton) clearButton.disabled = true;
+    if (submitButton) window.AppUi.setButtonLoading(submitButton, true);
+    saveStatus.textContent = "Masa tamat. Menghantar jawapan anda…";
+
+    fetch("/Home/Submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        RequestVerificationToken: token,
+      },
+      body: JSON.stringify({ letters: getLetters() }),
+    })
+      .then(async (response) => {
+        const result = await response.json();
+        if (response.status === 429) {
+          window.location.assign(result.redirectUrl || "/Home/RateLimitError");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(result.message || "Jawapan tidak dapat dihantar.");
+        }
+        window.location.reload();
+      })
+      .catch(() => {
+        puzzleTimer.dataset.submitting = "false";
+        saveStatus.textContent = "Masa tamat. Menyambung penghantaran…";
+        window.setTimeout(submitTimedOutPuzzle, 5000);
+      });
+  }
+
+  if (puzzleTimer?.dataset.running === "true") {
+    const deadline = Date.now() + Number(puzzleTimer.dataset.remainingSeconds) * 1000;
+    const updateCountdown = () => {
+      const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      remainingTime.textContent = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+      puzzleTimer.classList.toggle("is-urgent", secondsLeft > 0 && secondsLeft <= 60);
+      if (secondsLeft === 0) {
+        submitTimedOutPuzzle();
+      }
+    };
+    updateCountdown();
+    countdownTimer = window.setInterval(updateCountdown, 250);
+  }
+
   inputs.forEach((input) => {
     input.addEventListener("focus", () => {
       activeInput = input;
@@ -335,6 +397,7 @@
       }
 
       saveStatus.textContent = "Jawapan telah dihantar";
+      window.clearInterval(countdownTimer);
       submissionFeedback.textContent = "";
       submissionBanner.innerHTML =
         '<span class="completion-icon" aria-hidden="true">✓</span><div><strong>Jawapan anda telah dihantar.</strong><span>Terima kasih. Jawapan tidak boleh diubah lagi.</span></div>';

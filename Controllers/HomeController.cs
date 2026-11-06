@@ -68,7 +68,8 @@ public class HomeController : Controller
             {
                 CrosswordId = currentCrossword.Id,
                 PlayerId = normalizedPlayerId,
-                PlayerName = model.PlayerName
+                PlayerName = model.PlayerName,
+                StartedAtUtc = DateTime.UtcNow
             };
             _db.CrosswordAttempts.Add(attempt);
         }
@@ -91,7 +92,6 @@ public class HomeController : Controller
         }
 
         var attempt = await _db.CrosswordAttempts
-            .AsNoTracking()
             .Include(existing => existing.Crossword)
             .ThenInclude(crossword => crossword.Clues)
             .SingleOrDefaultAsync(existing => existing.Id == attemptId.Value);
@@ -99,6 +99,13 @@ public class HomeController : Controller
         if (attempt is null)
         {
             return RedirectToAction(nameof(Index));
+        }
+
+        var deadline = GetDeadline(attempt);
+        if (!attempt.SubmittedAtUtc.HasValue && DateTime.UtcNow >= deadline)
+        {
+            attempt.SubmittedAtUtc = deadline;
+            await _db.SaveChangesAsync();
         }
 
         var answers = JsonSerializer.Deserialize<Dictionary<string, string>>(attempt.AnswersJson)
@@ -139,6 +146,11 @@ public class HomeController : Controller
             cell.Letter = letter;
         }
 
+        var timeExpired = attempt.SubmittedAtUtc.HasValue && attempt.SubmittedAtUtc.Value >= deadline;
+        var remainingSeconds = attempt.SubmittedAtUtc.HasValue
+            ? 0
+            : Math.Max(0, (int)Math.Ceiling((deadline - DateTime.UtcNow).TotalSeconds));
+
         return View(new CrosswordPlayViewModel
         {
             CrosswordTitle = attempt.Crossword.Title,
@@ -147,7 +159,10 @@ public class HomeController : Controller
             Rows = attempt.Crossword.Rows,
             Columns = attempt.Crossword.Columns,
             AnsweredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, answers)),
+            TimeLimitMinutes = attempt.Crossword.Clues.Count,
+            RemainingSeconds = remainingSeconds,
             IsSubmitted = attempt.SubmittedAtUtc.HasValue,
+            TimeExpired = timeExpired,
             LastSavedAtUtc = attempt.LastSavedAtUtc,
             Cells = cells.ToList(),
             Clues = clues.Select(clue => new CrosswordClueViewModel
@@ -191,6 +206,11 @@ public class HomeController : Controller
         if (attempt.SubmittedAtUtc.HasValue)
         {
             return Conflict(new { message = "Teka silang kata ini telah dihantar dan tidak boleh diubah lagi." });
+        }
+
+        if (DateTime.UtcNow >= GetDeadline(attempt))
+        {
+            return Conflict(new { message = "Masa keseluruhan teka silang kata telah tamat.", timedOut = true });
         }
 
         if (!TryNormalizeAnswers(attempt.Crossword, request.Letters, out var letters, out var error))
@@ -239,10 +259,12 @@ public class HomeController : Controller
         {
             var savedAnswers = JsonSerializer.Deserialize<Dictionary<string, string>>(attempt.AnswersJson)
                 ?? throw new InvalidOperationException("The saved crossword progress is not valid JSON.");
+            var submittedDeadline = GetDeadline(attempt);
             return Json(new
             {
                 submittedAtUtc = attempt.SubmittedAtUtc,
-                answeredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, savedAnswers))
+                answeredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, savedAnswers)),
+                timedOut = attempt.SubmittedAtUtc.Value >= submittedDeadline
             });
         }
 
@@ -252,17 +274,28 @@ public class HomeController : Controller
         }
 
         var answeredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, letters));
+        var submittedAtUtc = DateTime.UtcNow;
+        var deadline = GetDeadline(attempt);
+        if (submittedAtUtc >= deadline)
+        {
+            attempt.AnswersJson = JsonSerializer.Serialize(letters);
+            attempt.LastSavedAtUtc = submittedAtUtc;
+            attempt.SubmittedAtUtc = deadline;
+            await _db.SaveChangesAsync();
+            return Json(new { submittedAtUtc = attempt.SubmittedAtUtc, answeredCount, timedOut = true });
+        }
+
         if (answeredCount == 0)
         {
             return BadRequest(new { message = "Jawab sekurang-kurangnya satu petunjuk dengan lengkap sebelum menghantar." });
         }
 
         attempt.AnswersJson = JsonSerializer.Serialize(letters);
-        attempt.LastSavedAtUtc = DateTime.UtcNow;
-        attempt.SubmittedAtUtc = DateTime.UtcNow;
+        attempt.LastSavedAtUtc = submittedAtUtc;
+        attempt.SubmittedAtUtc = submittedAtUtc;
         await _db.SaveChangesAsync();
 
-        return Json(new { submittedAtUtc = attempt.SubmittedAtUtc, answeredCount });
+        return Json(new { submittedAtUtc = attempt.SubmittedAtUtc, answeredCount, timedOut = false });
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -276,6 +309,9 @@ public class HomeController : Controller
     private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
         .OrderByDescending(crossword => crossword.CreatedAtUtc)
         .ThenByDescending(crossword => crossword.Id);
+
+    private static DateTime GetDeadline(CrosswordAttempt attempt) =>
+        attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count);
 
     private static bool TryNormalizeAnswers(
         Crossword crossword,

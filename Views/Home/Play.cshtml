@@ -44,6 +44,15 @@
                     <span class="panel-kicker">Teka silang kata anda</span>
                     <span class="progress-label" id="progress-label">@Model.AnsweredCount daripada @Model.Clues.Count petunjuk dijawab</span>
                 </div>
+                <div class="puzzle-timer @(Model.TimeExpired ? "is-expired" : Model.IsSubmitted ? "is-stopped" : "")"
+                     id="puzzle-timer"
+                     data-remaining-seconds="@Model.RemainingSeconds"
+                     data-running="@((!Model.IsSubmitted).ToString().ToLowerInvariant())"
+                     role="timer"
+                     aria-label="Masa keseluruhan teka silang kata">
+                    <span class="puzzle-timer-label">@(Model.TimeExpired ? "Masa tamat" : Model.IsSubmitted ? "Jawapan dihantar" : $"Masa keseluruhan · {Model.TimeLimitMinutes} minit")</span>
+                    <strong id="remaining-time">@(Model.IsSubmitted ? Model.TimeExpired ? "00:00" : "Selesai" : $"{Model.RemainingSeconds / 60:00}:{Model.RemainingSeconds % 60:00}")</strong>
+                </div>
                 <button type="button" class="direction-toggle" id="direction-toggle" aria-label="Tukar arah petunjuk">
                     <span class="direction-icon" aria-hidden="true">↔</span>
                     <span id="direction-label">Melintang</span>
