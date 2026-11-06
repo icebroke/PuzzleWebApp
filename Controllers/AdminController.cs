@@ -1,7 +1,13 @@
+using System.Globalization;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PuzzleWebApp.Data;
 using PuzzleWebApp.Models;
@@ -10,73 +16,151 @@ using PuzzleWebApp.ViewModels;
 
 namespace PuzzleWebApp.Controllers;
 
+[Authorize]
 public class AdminController : Controller
 {
-    private const string AdminSessionKey = "CrosswordAdminAuthenticated";
+    private const string MustChangePasswordClaim = "admin_must_change_password";
     private readonly AppDbContext _db;
-    private readonly IConfiguration _configuration;
+    private readonly IPasswordHasher<AdminUser> _passwordHasher;
 
-    public AdminController(AppDbContext db, IConfiguration configuration)
+    public AdminController(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher)
     {
         _db = db;
-        _configuration = configuration;
+        _passwordHasher = passwordHasher;
+    }
+
+    public override async Task OnActionExecutionAsync(
+        ActionExecutingContext context,
+        ActionExecutionDelegate next)
+    {
+        var actionName = context.ActionDescriptor.RouteValues["action"];
+        if (User.HasClaim(MustChangePasswordClaim, "true")
+            && actionName is not nameof(ChangePassword) and not nameof(Logout))
+        {
+            context.Result = RedirectToAction(nameof(ChangePassword));
+            return;
+        }
+
+        await next();
     }
 
     [HttpGet]
+    [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Login()
     {
-        if (IsAuthenticated())
+        if (User.Identity?.IsAuthenticated == true)
         {
             return RedirectToAction(nameof(Index));
         }
 
-        return View(new AdminLoginViewModel
-        {
-            IsConfigured = !string.IsNullOrWhiteSpace(_configuration["Admin:AccessCode"])
-        });
+        return View(new AdminLoginViewModel());
     }
 
     [HttpPost]
+    [AllowAnonymous]
+    [EnableRateLimiting("admin-login")]
     [ValidateAntiForgeryToken]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Login(AdminLoginViewModel model)
+    public async Task<IActionResult> Login(AdminLoginViewModel model)
     {
-        var configuredCode = _configuration["Admin:AccessCode"];
-        model.IsConfigured = !string.IsNullOrWhiteSpace(configuredCode);
-        if (!model.IsConfigured)
-        {
-            model.ErrorMessage = "Akses pentadbir belum dikonfigurasikan. Tetapkan pemboleh ubah persekitaran Admin__AccessCode sebelum log masuk.";
-            return View(model);
-        }
-
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        var expected = Encoding.UTF8.GetBytes(configuredCode!);
-        var provided = Encoding.UTF8.GetBytes(model.AccessCode ?? string.Empty);
-        if (!CryptographicOperations.FixedTimeEquals(expected, provided))
+        var normalizedUsername = AdminUserSeed.NormalizeUsername(model.Username);
+        var admin = await _db.AdminUsers.SingleOrDefaultAsync(user => user.NormalizedUsername == normalizedUsername);
+        var passwordMatches = admin is not null
+            && _passwordHasher.VerifyHashedPassword(admin, admin.PasswordHash, model.Password)
+                is PasswordVerificationResult.Success or PasswordVerificationResult.SuccessRehashNeeded;
+        if (!passwordMatches || admin is null)
         {
-            model.AccessCode = string.Empty;
-            model.ErrorMessage = "Kod akses tidak sah.";
+            model.Password = string.Empty;
+            model.ErrorMessage = "Nama pengguna atau kata laluan tidak sah.";
             return View(model);
         }
 
-        HttpContext.Session.SetString(AdminSessionKey, "true");
-        return RedirectToAction(nameof(Index));
+        var claims = new List<System.Security.Claims.Claim>
+        {
+            new(System.Security.Claims.ClaimTypes.NameIdentifier, admin.Id.ToString(CultureInfo.InvariantCulture)),
+            new(System.Security.Claims.ClaimTypes.Name, admin.Username)
+        };
+        if (admin.MustChangePassword)
+        {
+            claims.Add(new System.Security.Claims.Claim(MustChangePasswordClaim, "true"));
+        }
+
+        var identity = new System.Security.Claims.ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new System.Security.Claims.ClaimsPrincipal(identity),
+            new AuthenticationProperties { IsPersistent = false });
+        return RedirectToAction(admin.MustChangePassword ? nameof(ChangePassword) : nameof(Index));
+    }
+
+    [HttpGet]
+    public IActionResult ChangePassword() => View(new AdminChangePasswordViewModel());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(AdminChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userId, NumberStyles.None, CultureInfo.InvariantCulture, out var adminId))
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+
+        var admin = await _db.AdminUsers.SingleOrDefaultAsync(user => user.Id == adminId);
+        if (admin is null)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+
+        var currentPasswordValid = _passwordHasher.VerifyHashedPassword(admin, admin.PasswordHash, model.CurrentPassword)
+            is PasswordVerificationResult.Success or PasswordVerificationResult.SuccessRehashNeeded;
+        if (!currentPasswordValid)
+        {
+            ModelState.AddModelError(nameof(model.CurrentPassword), "Kata laluan semasa tidak sah.");
+            model.CurrentPassword = string.Empty;
+            model.NewPassword = string.Empty;
+            model.ConfirmPassword = string.Empty;
+            return View(model);
+        }
+
+        var newPasswordIsCurrent = _passwordHasher.VerifyHashedPassword(admin, admin.PasswordHash, model.NewPassword)
+            is PasswordVerificationResult.Success or PasswordVerificationResult.SuccessRehashNeeded;
+        if (newPasswordIsCurrent)
+        {
+            ModelState.AddModelError(nameof(model.NewPassword), "Kata laluan baharu mesti berbeza daripada kata laluan semasa.");
+            model.CurrentPassword = string.Empty;
+            model.NewPassword = string.Empty;
+            model.ConfirmPassword = string.Empty;
+            return View(model);
+        }
+
+        admin.PasswordHash = _passwordHasher.HashPassword(admin, model.NewPassword);
+        admin.MustChangePassword = false;
+        await _db.SaveChangesAsync();
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        TempData["AdminPasswordChanged"] = true;
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Index(string? q, string? status, int page = 1)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var crossword = await GetLiveCrosswordQuery()
             .AsNoTracking()
             .Include(item => item.Clues)
@@ -151,11 +235,6 @@ public class AdminController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Puzzles()
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var liveId = await GetLiveCrosswordQuery()
             .Select(crossword => (int?)crossword.Id)
             .FirstOrDefaultAsync();
@@ -182,11 +261,6 @@ public class AdminController : Controller
     [HttpGet]
     public IActionResult CreatePuzzle()
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         return View("PuzzleForm", new AdminPuzzleEditViewModel());
     }
 
@@ -194,11 +268,6 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreatePuzzle(AdminPuzzleEditViewModel model)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var layout = BuildPuzzleLayout(model);
         if (!ModelState.IsValid || layout is null)
         {
@@ -221,11 +290,6 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> EditPuzzle(int id)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var crossword = await _db.Crosswords.AsNoTracking()
             .Include(item => item.Clues)
             .SingleOrDefaultAsync(item => item.Id == id);
@@ -241,11 +305,6 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditPuzzle(int id, AdminPuzzleEditViewModel model)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var crossword = await _db.Crosswords
             .Include(item => item.Clues)
             .SingleOrDefaultAsync(item => item.Id == id);
@@ -278,11 +337,6 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> DeletePuzzle(int id)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         if (await _db.Crosswords.CountAsync() <= 1)
         {
             TempData["AdminNotice"] = "Sekurang-kurangnya satu teka silang kata mesti dikekalkan.";
@@ -308,11 +362,6 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeletePuzzleConfirmed(int id)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         if (await _db.Crosswords.CountAsync() <= 1)
         {
             TempData["AdminNotice"] = "Sekurang-kurangnya satu teka silang kata mesti dikekalkan.";
@@ -335,11 +384,6 @@ public class AdminController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Attempt(int id)
     {
-        if (!IsAuthenticated())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
         var attempt = await _db.CrosswordAttempts
             .AsNoTracking()
             .Include(existing => existing.Crossword)
@@ -381,14 +425,11 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        HttpContext.Session.Remove(AdminSessionKey);
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(Login));
     }
-
-    private bool IsAuthenticated() =>
-        HttpContext.Session.GetString(AdminSessionKey) == "true";
 
     private IQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
         .OrderByDescending(crossword => crossword.CreatedAtUtc)

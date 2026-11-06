@@ -1,20 +1,39 @@
 using System.Threading.RateLimiting;
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PuzzleWebApp.Data;
 using PuzzleWebApp.Middlewares;
+using PuzzleWebApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = ".PuzzleWebApp.Admin";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+        options.SlidingExpiration = true;
+        options.LoginPath = "/Admin/Login";
+        options.AccessDeniedPath = "/Admin/Login";
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromHours(1);
 });
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -22,6 +41,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add rate limit
 builder.Services.AddRateLimiter(options =>
 {
+    options.AddPolicy("admin-login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromMinutes(1),
+                PermitLimit = 5,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
         if (httpContext.Request.Path.Equals("/Home/RateLimitError", StringComparison.OrdinalIgnoreCase))
@@ -78,6 +108,9 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
     db.Database.Migrate(); // Automatically applies any pending migrations to the database
 
+    AdminUserSeed.EnsureSeeded(
+        db,
+        scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>());
     CrosswordSeed.EnsureSeeded(db);
 }
 
@@ -98,6 +131,7 @@ app.UseMiddleware<CspMiddleware>();
 app.UseRateLimiter();
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

@@ -5,10 +5,32 @@ namespace PuzzleWebApp.ViewModels;
 
 public class AdminLoginViewModel
 {
-    [StringLength(200)]
-    public string AccessCode { get; set; } = string.Empty;
-    public bool IsConfigured { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string Username { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(200, MinimumLength = 12)]
+    public string Password { get; set; } = string.Empty;
     public string? ErrorMessage { get; set; }
+}
+
+public class AdminChangePasswordViewModel
+{
+    [Required]
+    [DataType(DataType.Password)]
+    [StringLength(200)]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [DataType(DataType.Password)]
+    [StringLength(200, MinimumLength = 12)]
+    public string NewPassword { get; set; } = string.Empty;
+
+    [Required]
+    [DataType(DataType.Password)]
+    [Compare(nameof(NewPassword))]
+    public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class AdminPuzzleListViewModel

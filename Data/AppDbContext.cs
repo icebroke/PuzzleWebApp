@@ -10,9 +10,26 @@ public class AppDbContext : DbContext
     public DbSet<Crossword> Crosswords => Set<Crossword>();
     public DbSet<CrosswordClue> CrosswordClues => Set<CrosswordClue>();
     public DbSet<CrosswordAttempt> CrosswordAttempts => Set<CrosswordAttempt>();
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AdminUser>()
+            .Property(user => user.Username)
+            .HasMaxLength(100);
+
+        modelBuilder.Entity<AdminUser>()
+            .Property(user => user.NormalizedUsername)
+            .HasMaxLength(100);
+
+        modelBuilder.Entity<AdminUser>()
+            .Property(user => user.PasswordHash)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<AdminUser>()
+            .HasIndex(user => user.NormalizedUsername)
+            .IsUnique();
+
         modelBuilder.Entity<Crossword>()
             .Property(crossword => crossword.Title)
             .HasMaxLength(160);
