@@ -9,7 +9,7 @@
             <a asp-action="Index" class="admin-back-link">← Keputusan keseluruhan</a>
             <p class="eyebrow admin-detail-eyebrow">Kandungan</p>
             <h1>Urus teka silang kata</h1>
-            <p class="admin-subtitle">Puzzle terkini menjadi teka silang kata yang dipaparkan kepada pemain.</p>
+            <p class="admin-subtitle">Jadual menentukan waktu akses pemain; pengaktifan manual membuka satu teka silang kata serta-merta.</p>
         </div>
         <nav class="admin-header-actions" aria-label="Tindakan pentadbir">
             <a asp-action="CreatePuzzle" class="btn btn-primary admin-manage-link">Tambah teka silang kata</a>
@@ -53,9 +53,20 @@
                                 <span>@puzzle.Rows × @puzzle.Columns petak</span>
                                 <span>@puzzle.ClueCount petunjuk</span>
                                 <span>@puzzle.AttemptCount percubaan</span>
+                                <span>@puzzle.ScheduleLabel</span>
+                                @if (puzzle.ManualActivation)
+                                {
+                                    <span>Pengaktifan manual</span>
+                                }
                             </div>
                         </div>
                         <div class="puzzle-list-actions">
+                            <form asp-action="ToggleManualActivation" asp-route-id="@puzzle.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn @(puzzle.ManualActivation ? "btn-outline-secondary" : "btn-primary")">
+                                    @(puzzle.ManualActivation ? "Matikan manual" : "Aktifkan sekarang")
+                                </button>
+                            </form>
                             <a asp-action="EditPuzzle" asp-route-id="@puzzle.Id" class="btn btn-outline-secondary">Edit</a>
                             @if (Model.Puzzles.Count > 1)
                             {

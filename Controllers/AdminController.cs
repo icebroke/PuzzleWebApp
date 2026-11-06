@@ -161,7 +161,11 @@ public class AdminController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Index(string? q, string? status, int page = 1)
     {
-        var crossword = await GetLiveCrosswordQuery()
+        var crossword = await CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, DateTime.UtcNow)
+            .AsNoTracking()
+            .Include(item => item.Clues)
+            .FirstOrDefaultAsync();
+        crossword ??= await GetNewestCrosswordQuery()
             .AsNoTracking()
             .Include(item => item.Clues)
             .FirstAsync();
@@ -235,7 +239,8 @@ public class AdminController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Puzzles()
     {
-        var liveId = await GetLiveCrosswordQuery()
+        var nowUtc = DateTime.UtcNow;
+        var liveId = await CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, nowUtc)
             .Select(crossword => (int?)crossword.Id)
             .FirstOrDefaultAsync();
         var puzzles = await _db.Crosswords
@@ -251,9 +256,21 @@ public class AdminController : Controller
                 Columns = crossword.Columns,
                 ClueCount = crossword.Clues.Count,
                 AttemptCount = crossword.Attempts.Count,
-                IsLive = crossword.Id == liveId
+                IsLive = crossword.Id == liveId,
+                ManualActivation = crossword.ManualActivation,
+                ScheduledStartAtUtc = crossword.ScheduledStartAtUtc,
+                ScheduledEndAtUtc = crossword.ScheduledEndAtUtc
             })
             .ToListAsync();
+
+        foreach (var puzzle in puzzles)
+        {
+            var start = CrosswordAvailability.ToMalaysiaTime(puzzle.ScheduledStartAtUtc);
+            var end = CrosswordAvailability.ToMalaysiaTime(puzzle.ScheduledEndAtUtc);
+            puzzle.ScheduleLabel = start.HasValue && end.HasValue
+                ? $"{start.Value:dd MMM yyyy, HH:mm} hingga {end.Value:dd MMM yyyy, HH:mm} (MYT)"
+                : "Jadual belum ditetapkan";
+        }
 
         return View(new AdminPuzzleListViewModel { Puzzles = puzzles });
     }
@@ -280,10 +297,12 @@ public class AdminController : Controller
             Description = model.Description,
             Rows = layout.Rows,
             Columns = layout.Columns,
+            ScheduledStartAtUtc = CrosswordAvailability.ToUtc(model.ScheduledStartAt),
+            ScheduledEndAtUtc = CrosswordAvailability.ToUtc(model.ScheduledEndAt),
             Clues = layout.Clues
         });
         await _db.SaveChangesAsync();
-        TempData["AdminNotice"] = "Teka silang kata baharu telah ditambah dan kini aktif.";
+        TempData["AdminNotice"] = "Teka silang kata baharu telah ditambah. Ia hanya dibuka mengikut jadual atau pengaktifan manual.";
         return RedirectToAction(nameof(Puzzles));
     }
 
@@ -324,6 +343,8 @@ public class AdminController : Controller
         crossword.Description = model.Description;
         crossword.Rows = layout.Rows;
         crossword.Columns = layout.Columns;
+        crossword.ScheduledStartAtUtc = CrosswordAvailability.ToUtc(model.ScheduledStartAt);
+        crossword.ScheduledEndAtUtc = CrosswordAvailability.ToUtc(model.ScheduledEndAt);
         await using var transaction = await _db.Database.BeginTransactionAsync();
         _db.CrosswordClues.RemoveRange(crossword.Clues);
         await _db.SaveChangesAsync();
@@ -331,6 +352,34 @@ public class AdminController : Controller
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
         TempData["AdminNotice"] = "Perubahan teka silang kata telah disimpan.";
+        return RedirectToAction(nameof(Puzzles));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleManualActivation(int id)
+    {
+        var crossword = await _db.Crosswords.SingleOrDefaultAsync(item => item.Id == id);
+        if (crossword is null)
+        {
+            return NotFound();
+        }
+
+        if (crossword.ManualActivation)
+        {
+            crossword.ManualActivation = false;
+            TempData["AdminNotice"] = "Pengaktifan manual telah dimatikan.";
+        }
+        else
+        {
+            await _db.Crosswords
+                .Where(item => item.ManualActivation)
+                .ExecuteUpdateAsync(update => update.SetProperty(item => item.ManualActivation, false));
+            crossword.ManualActivation = true;
+            TempData["AdminNotice"] = "Teka silang kata telah diaktifkan secara manual.";
+        }
+
+        await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Puzzles));
     }
 
@@ -431,7 +480,7 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Login));
     }
 
-    private IQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
+    private IQueryable<Crossword> GetNewestCrosswordQuery() => _db.Crosswords
         .OrderByDescending(crossword => crossword.CreatedAtUtc)
         .ThenByDescending(crossword => crossword.Id);
 
@@ -440,6 +489,16 @@ public class AdminController : Controller
         model.Title = model.Title?.Trim() ?? string.Empty;
         model.Description = model.Description?.Trim() ?? string.Empty;
         model.Clues ??= [];
+
+        if (model.ScheduledStartAt.HasValue != model.ScheduledEndAt.HasValue)
+        {
+            ModelState.AddModelError(nameof(model.ScheduledEndAt), "Tetapkan kedua-dua tarikh mula dan tamat, atau kosongkan kedua-duanya.");
+        }
+        else if (model.ScheduledStartAt.HasValue && model.ScheduledEndAt <= model.ScheduledStartAt)
+        {
+            ModelState.AddModelError(nameof(model.ScheduledEndAt), "Tarikh tamat mesti selepas tarikh mula.");
+        }
+
         foreach (var clue in model.Clues)
         {
             clue.Text = clue.Text?.Trim() ?? string.Empty;
@@ -484,6 +543,8 @@ public class AdminController : Controller
         Id = crossword.Id,
         Title = crossword.Title,
         Description = crossword.Description,
+        ScheduledStartAt = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledStartAtUtc),
+        ScheduledEndAt = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledEndAtUtc),
         Clues = crossword.Clues.OrderBy(clue => clue.Number).ThenBy(clue => clue.Direction)
             .Select(clue => new AdminPuzzleClueEditViewModel
             {

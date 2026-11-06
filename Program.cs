@@ -107,6 +107,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
     db.Database.Migrate(); // Automatically applies any pending migrations to the database
+    CrosswordScheduleSchema.EnsureUpToDate(db.Database);
 
     AdminUserSeed.EnsureSeeded(
         db,

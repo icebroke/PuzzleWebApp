@@ -6,6 +6,8 @@ public class CrosswordJoinViewModel
 {
     public string CrosswordTitle { get; set; } = string.Empty;
     public string CrosswordDescription { get; set; } = string.Empty;
+    public bool IsPuzzleAvailable { get; set; } = true;
+    public string AvailabilityMessage { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Sila masukkan nama anda.")]
     [StringLength(100, ErrorMessage = "Nama anda tidak boleh melebihi 100 aksara.")]

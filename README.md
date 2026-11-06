@@ -128,10 +128,14 @@ Selepas log masuk, pentadbir boleh:
 - menilai jumlah jawapan yang dijawab dan betul
 - melihat butiran setiap cubaan pemain
 - memantau prestasi keseluruhan teka silang kata
+- menetapkan masa mula dan tamat permainan dalam waktu Malaysia
+- mengaktifkan atau menyahaktifkan permainan secara manual
 
 ## Pangkalan data dan benih data
 
 Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `AdminUserSeed` akan memastikan jadual serta akaun pentadbir awal tersedia; `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Kemajuan pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
+
+Pentadbir boleh menetapkan waktu mula dan tamat setiap teka silang kata dalam waktu Malaysia; masa disimpan sebagai UTC. Pemain hanya boleh menyertai, membuka, menyimpan atau menghantar permainan ketika waktu itu aktif. Kedua-dua masa perlu ditetapkan untuk jadual automatik berfungsi. Pengaktifan manual oleh pentadbir membuka satu teka silang kata serta-merta dan mengatasi jadual; teka silang kata lain yang diaktifkan secara manual akan menggantikannya. Pangkalan data SQLite sedia ada ditambah secara automatik dengan lajur jadual apabila aplikasi bermula.
 
 ### Kemas kini utama: susun atur teka silang kata
 
@@ -158,7 +162,7 @@ In progres.
 
 - [x] Fix the answer input to follow the direction.
 - [x] Change the title to 'Kuiz Silang Kata Bulan Integriti MDHT 2026' in DB.
-- [ ] Fix UI for mobile view.
-- [ ] Fix UX behaviour and also interaction.
-- [ ] 1st round 8 - 12 November 2026, 17:00
-- [ ] 2nd round 15 - 19 November 2026, 17:00
+- [x] Fix UI for mobile view.
+- [x] Fix UX behaviour and also interaction.
+- [] 1st round 8 November 2026, 09:00 - 12 November 2026, 17:00
+- [] 2nd round 15 November 2026, 09:00 - 19 November 2026, 17:00

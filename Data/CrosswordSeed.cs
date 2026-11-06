@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PuzzleWebApp.Models;
 using PuzzleWebApp.Services;
 
@@ -5,15 +6,31 @@ namespace PuzzleWebApp.Data;
 
 public static class CrosswordSeed
 {
-    private sealed record RoundSeed(string Title, string Description, List<(string Text, string Answer)> Entries);
+    private sealed record RoundSeed(
+        string LegacyTitle,
+        string Title,
+        string Description,
+        DateTime ScheduledStartAtUtc,
+        DateTime ScheduledEndAtUtc,
+        List<(string Text, string Answer)> Entries);
 
     public static void EnsureSeeded(AppDbContext db)
     {
-        foreach (var round in CreateRounds())
+        var rounds = CreateRounds();
+        var existingPuzzles = db.Crosswords.Include(crossword => crossword.Clues).ToList();
+
+        foreach (var round in rounds)
         {
-            if (db.Crosswords.Any(crossword => crossword.Title == round.Title))
+            var crossword = existingPuzzles.FirstOrDefault(existing => existing.Title == round.LegacyTitle)
+                ?? existingPuzzles.FirstOrDefault(existing =>
+                    existing.Title == round.Title
+                    && existing.ScheduledStartAtUtc == round.ScheduledStartAtUtc);
+            if (crossword is null && round.LegacyTitle.EndsWith("Pusingan 2", StringComparison.Ordinal))
             {
-                continue;
+                crossword = existingPuzzles.FirstOrDefault(existing =>
+                    existing.Title == round.Title
+                    && !existing.ScheduledStartAtUtc.HasValue
+                    && !existing.ScheduledEndAtUtc.HasValue);
             }
 
             var entries = round.Entries
@@ -24,14 +41,37 @@ public static class CrosswordSeed
                 throw new InvalidOperationException($"The crossword answers for {round.Title} could not be arranged.");
             }
 
-            db.Crosswords.Add(new Crossword
+            if (crossword is null)
             {
-                Title = round.Title,
-                Description = round.Description,
-                Rows = layout.Rows,
-                Columns = layout.Columns,
-                Clues = layout.Clues
-            });
+                crossword = new Crossword();
+                db.Crosswords.Add(crossword);
+                existingPuzzles.Add(crossword);
+            }
+
+            crossword.Title = round.Title;
+            crossword.Description = round.Description;
+            crossword.Rows = layout.Rows;
+            crossword.Columns = layout.Columns;
+            crossword.ScheduledStartAtUtc = round.ScheduledStartAtUtc;
+            crossword.ScheduledEndAtUtc = round.ScheduledEndAtUtc;
+            var hasAttempts = crossword.Id != 0
+                && db.CrosswordAttempts.Any(attempt => attempt.CrosswordId == crossword.Id);
+            if (!hasAttempts)
+            {
+                db.CrosswordClues.RemoveRange(crossword.Clues);
+                crossword.Clues = layout.Clues;
+            }
+
+            foreach (var duplicate in existingPuzzles.Where(existing =>
+                existing.Id != crossword.Id
+                && existing.Title == round.Title
+                && existing.ScheduledStartAtUtc == round.ScheduledStartAtUtc))
+            {
+                duplicate.Title = $"{round.Title} (Arkib)";
+                duplicate.ScheduledStartAtUtc = null;
+                duplicate.ScheduledEndAtUtc = null;
+                duplicate.ManualActivation = false;
+            }
         }
 
         db.SaveChanges();
@@ -39,7 +79,27 @@ public static class CrosswordSeed
 
     private static List<RoundSeed> CreateRounds() =>
     [
-        new RoundSeed("Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
+        new RoundSeed("Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
+            MalaysiaTimeToUtc(2026, 11, 8, 9), MalaysiaTimeToUtc(2026, 11, 12, 17),
+        [
+            ("Seorang pegawai terlibat dalam penilaian sebutharga yang disertai oleh syarikat milik ahli keluarganya. Apakah keadaan yang perlu dikenal pasti dan diuruskan oleh pegawai tersebut?", "Konflik Kepentingan"),
+            ("Seorang ketua jabatan meluluskan sesuatu pembayaran tanpa menyemak dokumen sokongan, kemudian berlaku kerugian kepada organisasi. Apakah prinsip yang perlu dipertanggungjawabkan?", "Akauntabiliti"),
+            ("Seorang pegawai menyediakan laporan prestasi jabatan dengan memasukkan angka yang telah diubah supaya pencapaian kelihatan lebih baik daripada keadaan sebenar. Apakah nilai yang telah dicabuli?", "Integriti"),
+            ("Seorang pegawai mencadangkan anak saudaranya dilantik ke jawatan kosong tanpa melalui proses pemilihan yang adil. Apakah amalan ini dikenali sebagai?", "Nepotisme"),
+            ("Seorang kakitangan mengetahui terdapat tuntutan perjalanan palsu yang dibuat oleh rakan sekerjanya. Dia membuat laporan melalui saluran rasmi organisasi. Apakah tindakan yang telah dilakukan?", "Pelaporan"),
+            ("Seorang pegawai berkongsi dokumen dalaman yang belum diluluskan untuk edaran kepada pihak luar tanpa kebenaran. Apakah prinsip yang telah dilanggar?", "Kerahsiaan"),
+            ("Seorang pegawai menerima arahan untuk meluluskan pembayaran walaupun kerja belum disahkan siap. Apakah nilai yang perlu menjadi pegangan pegawai tersebut ketika menghadapi tekanan ini?", "Ketegasan"),
+            ("Seorang pegawai memberikan layanan istimewa kepada pemohon lesen kerana pemohon tersebut merupakan kenalan rapatnya. Apakah prinsip yang telah diketepikan?", "Keadilan"),
+            ("Seorang pegawai menggunakan kenderaan rasmi jabatan untuk urusan peribadi pada hujung minggu tanpa kebenaran. Apakah perbuatan ini dikategorikan sebagai?", "Salahguna Aset"),
+            ("Seorang pegawai memastikan hanya syarikat milik kenalan rapatnya dimaklumkan tentang peluang perolehan supaya syarikat tersebut mendapat kelebihan. Apakah amalan ini dikenali sebagai?", "Kronisme"),
+            ("Seorang pegawai dilantik sebagai ahli jawatankuasa penilaian, tetapi mempunyai kepentingan kewangan dalam salah satu syarikat yang dinilai. Apakah tindakan awal yang perlu dibuat oleh pegawai tersebut?", "Pengisytiharan"),
+            ("Sebelum melaksanakan sesuatu urusan kewangan, pegawai memastikan semua tindakan mengikut pekeliling dan prosedur yang sedang berkuat kuasa. Apakah amalan ini dikenali sebagai?", "Pematuhan"),
+            ("Seorang penjawat awam memulangkan wang lebihan bayaran yang diterimanya walaupun tiada pihak menyedari kesilapan tersebut. Apakah nilai yang ditunjukkan?", "Amanah"),
+            ("Pihak pengurusan memastikan setiap keputusan perolehan mempunyai justifikasi, rekod pertimbangan dan proses kelulusan yang jelas. Apakah konsep pengurusan yang diamalkan?", "Tadbir Urus"),
+            ("Sebuah jabatan menyediakan mekanisme rasmi untuk menerima aduan berkaitan salah laku kakitangan, merekodkan aduan dan menjalankan tindakan susulan. Apakah mekanisme ini?", "Saluran Aduan")
+        ]),
+        new RoundSeed("Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
+            MalaysiaTimeToUtc(2026, 11, 15, 9), MalaysiaTimeToUtc(2026, 11, 19, 17),
         [
             ("Bagi mengelakkan seorang pegawai mengawal keseluruhan proses pembayaran, organisasi perlu mengamalkan __________ supaya tugas penyediaan, semakan dan kelulusan dilaksanakan oleh individu yang berbeza.", "Pengasingan Tugas"),
             ("Kegagalan merekod kutipan hasil dengan betul sehingga menyebabkan wang yang sepatutnya diterima oleh jabatan tidak dapat dikesan dikenali sebagai __________ hasil.", "Ketirisan"),
@@ -58,6 +118,12 @@ public static class CrosswordSeed
             ("Organisasi menetapkan sasaran kerja tahunan dan menilai pencapaian kakitangan berdasarkan hasil kerja serta tanggungjawab yang diberikan. Proses ini dikenali sebagai __________.", "Penilaian Prestasi")
         ])
     ];
+
+    private static DateTime MalaysiaTimeToUtc(int year, int month, int day, int hour) =>
+        TimeZoneInfo.ConvertTimeToUtc(
+            new DateTime(year, month, day, hour, 0, 0, DateTimeKind.Unspecified),
+            TimeZoneInfo.FindSystemTimeZoneById(
+                OperatingSystem.IsWindows() ? "Singapore Standard Time" : "Asia/Kuala_Lumpur"));
 
     private static string NormalizeAnswer(string answer) =>
         new(answer.Where(char.IsLetter).Select(char.ToUpperInvariant).ToArray());

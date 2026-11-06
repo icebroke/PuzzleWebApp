@@ -7,11 +7,26 @@
     <section class="join-card">
         <header class="join-welcome">
             <img class="brand-mark mdht-logo" src="~/images/mdht-logo.png" alt="Majlis Daerah Hulu Terengganu" />
-            <h1>@Model.CrosswordTitle</h1>
-            <p class="intro">@Model.CrosswordDescription</p>
+            @if (Model.IsPuzzleAvailable)
+            {
+                <h1>@Model.CrosswordTitle</h1>
+                <p class="intro">@Model.CrosswordDescription</p>
+            }
+            else
+            {
+                <h1>Teka silang kata belum dibuka</h1>
+                <p class="intro">Permainan akan tersedia dalam tempoh yang ditetapkan oleh pentadbir.</p>
+            }
         </header>
 
+        @if (!Model.IsPuzzleAvailable)
+        {
+            <p class="admin-notice" role="status">@Model.AvailabilityMessage</p>
+        }
+        else
+        {
         <form asp-action="Join" method="post" class="join-form" data-ajax-form>
+            @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
             <div class="mb-3">
                 <label asp-for="PlayerName" class="form-label"></label>
@@ -29,6 +44,7 @@
                 <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
             </button>
         </form>
+        }
 
         <div class="join-support">
             <div class="join-note">

@@ -32,6 +32,17 @@
                     <textarea asp-for="Description" class="form-control" rows="3" maxlength="1000"></textarea>
                     <span asp-validation-for="Description" class="field-validation"></span>
                 </div>
+                <div class="puzzle-field">
+                    <label asp-for="ScheduledStartAt">Mula (waktu Malaysia)</label>
+                    <input asp-for="ScheduledStartAt" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="ScheduledStartAt" class="field-validation"></span>
+                </div>
+                <div class="puzzle-field">
+                    <label asp-for="ScheduledEndAt">Tamat (waktu Malaysia)</label>
+                    <input asp-for="ScheduledEndAt" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="ScheduledEndAt" class="field-validation"></span>
+                </div>
+                <p class="puzzle-layout-note puzzle-field-wide">Kosongkan kedua-dua masa untuk tiada jadual automatik. Teka silang kata hanya boleh dimainkan dalam tempoh ini, kecuali diaktifkan secara manual.</p>
             </div>
         </section>
 

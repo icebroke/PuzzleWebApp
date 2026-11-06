@@ -21,7 +21,16 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstAsync();
+        var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstOrDefaultAsync();
+        if (crossword is null)
+        {
+            return View(new CrosswordJoinViewModel
+            {
+                IsPuzzleAvailable = false,
+                AvailabilityMessage = "Teka silang kata belum dibuka. Sila kembali dalam tempoh yang ditetapkan."
+            });
+        }
+
         return View(new CrosswordJoinViewModel
         {
             CrosswordTitle = crossword.Title,
@@ -48,15 +57,21 @@ public class HomeController : Controller
         model.PlayerName = model.PlayerName?.Trim() ?? string.Empty;
         model.PlayerId = model.PlayerId?.Trim() ?? string.Empty;
 
-        if (!ModelState.IsValid)
+        var currentCrossword = await GetLiveCrosswordQuery().FirstOrDefaultAsync();
+        if (currentCrossword is null)
         {
-            var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstAsync();
-            model.CrosswordTitle = crossword.Title;
-            model.CrosswordDescription = crossword.Description;
+            model.IsPuzzleAvailable = false;
+            model.AvailabilityMessage = "Teka silang kata belum dibuka. Sila kembali dalam tempoh yang ditetapkan.";
             return View("Index", model);
         }
 
-        var currentCrossword = await GetLiveCrosswordQuery().FirstAsync();
+        if (!ModelState.IsValid)
+        {
+            model.CrosswordTitle = currentCrossword.Title;
+            model.CrosswordDescription = currentCrossword.Description;
+            return View("Index", model);
+        }
+
         var normalizedPlayerId = model.PlayerId.ToUpperInvariant();
         var attempt = await _db.CrosswordAttempts.SingleOrDefaultAsync(existing =>
             existing.CrosswordId == currentCrossword.Id &&
@@ -97,6 +112,11 @@ public class HomeController : Controller
             .SingleOrDefaultAsync(existing => existing.Id == attemptId.Value);
 
         if (attempt is null)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!CrosswordAvailability.IsAvailable(attempt.Crossword, DateTime.UtcNow))
         {
             return RedirectToAction(nameof(Index));
         }
@@ -203,6 +223,11 @@ public class HomeController : Controller
             return NotFound(new { message = "Permainan yang disimpan tidak ditemui. Kembali ke halaman utama dan masukkan ID pemain sekali lagi." });
         }
 
+        if (!CrosswordAvailability.IsAvailable(attempt.Crossword, DateTime.UtcNow))
+        {
+            return Conflict(new { message = "Teka silang kata ini belum dibuka atau tempoh permainan telah tamat." });
+        }
+
         if (attempt.SubmittedAtUtc.HasValue)
         {
             return Conflict(new { message = "Teka silang kata ini telah dihantar dan tidak boleh diubah lagi." });
@@ -253,6 +278,11 @@ public class HomeController : Controller
         if (attempt is null)
         {
             return NotFound(new { message = "Permainan yang disimpan tidak ditemui. Kembali ke halaman utama dan masukkan ID pemain sekali lagi." });
+        }
+
+        if (!CrosswordAvailability.IsAvailable(attempt.Crossword, DateTime.UtcNow))
+        {
+            return Conflict(new { message = "Teka silang kata ini belum dibuka atau tempoh permainan telah tamat." });
         }
 
         if (attempt.SubmittedAtUtc.HasValue)
@@ -306,9 +336,8 @@ public class HomeController : Controller
 
     private static string GetClueKey(CrosswordClue clue) => $"{clue.Direction}-{clue.Number}";
 
-    private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
-        .OrderByDescending(crossword => crossword.CreatedAtUtc)
-        .ThenByDescending(crossword => crossword.Id);
+    private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() =>
+        CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, DateTime.UtcNow);
 
     private static DateTime GetDeadline(CrosswordAttempt attempt) =>
         attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count);

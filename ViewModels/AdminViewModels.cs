@@ -48,6 +48,10 @@ public class AdminPuzzleSummaryViewModel
     public int ClueCount { get; set; }
     public int AttemptCount { get; set; }
     public bool IsLive { get; set; }
+    public bool ManualActivation { get; set; }
+    public DateTime? ScheduledStartAtUtc { get; set; }
+    public DateTime? ScheduledEndAtUtc { get; set; }
+    public string ScheduleLabel { get; set; } = string.Empty;
 }
 
 public class AdminPuzzleEditViewModel
@@ -61,6 +65,9 @@ public class AdminPuzzleEditViewModel
     [System.ComponentModel.DataAnnotations.Required]
     [System.ComponentModel.DataAnnotations.StringLength(1000)]
     public string Description { get; set; } = string.Empty;
+
+    public DateTime? ScheduledStartAt { get; set; }
+    public DateTime? ScheduledEndAt { get; set; }
 
     public List<AdminPuzzleClueEditViewModel> Clues { get; set; } = [];
 }
