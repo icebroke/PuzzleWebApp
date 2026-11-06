@@ -107,21 +107,12 @@ Aplikasi ini menggunakan SQLite dengan rentetan sambungan berikut dalam `appsett
 }
 ```
 
-Untuk log masuk pentadbir, konfigurasi kod akses disimpan dalam `Admin:AccessCode`.
+Pentadbir lalai disemai ketika aplikasi bermula jika belum ada akaun pentadbir:
 
-Anda boleh menukar nilai ini melalui pembolehubah persekitaran seperti berikut:
+- Nama pengguna: `admin`
+- Kata laluan sementara: `ChangeMe123!`
 
-```bash
-setx Admin__AccessCode "NILAI_KOD_AKSES"
-```
-
-Pada Linux/macOS:
-
-```bash
-export Admin__AccessCode="NILAI_KOD_AKSES"
-```
-
-Untuk persekitaran pembangunan, anda juga boleh menggunakan `dotnet user-secrets` jika perlu.
+Akaun ini diwajibkan menukar kata laluan pada log masuk pertama sebelum halaman pentadbiran boleh digunakan. Tukar nilai sementara dalam `AdminUserSeed` sebelum deployment. Kata laluan disimpan sebagai hash menggunakan ASP.NET Core Identity. SQLite tidak mempunyai akaun pengguna/kata laluan terbina dalam; akses pangkalan data dikawal oleh aplikasi dan kebenaran fail sistem operasi. Simpan `puzzle.db` di luar direktori web awam, hadkan akses fail kepada akaun aplikasi sahaja, dan lindungi sandaran pada tahap yang sama.
 
 ## Pentadbiran
 
@@ -140,7 +131,7 @@ Selepas log masuk, pentadbir boleh:
 
 ## Pangkalan data dan benih data
 
-Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Kemajuan pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
+Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `AdminUserSeed` akan memastikan jadual serta akaun pentadbir awal tersedia; `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Kemajuan pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
 
 ### Kemas kini utama: susun atur teka silang kata
 
@@ -151,8 +142,8 @@ Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat
 
 ## Peringatan
 
-- Kod akses pentadbir harus ditetapkan dengan selamat untuk persekitaran pengeluaran.
-- Jangan gunakan konfigurasi default yang terdedah dalam persekitaran pengeluaran.
+- Nama pengguna dan kata laluan pentadbir mesti ditetapkan melalui pengurusan rahsia untuk persekitaran pengeluaran.
+- Gunakan HTTPS dan kata laluan unik yang kuat; sesi admin menggunakan kuki HttpOnly, Secure, SameSite dan tamat selepas dua jam.
 - Sebarang data pemain dan jawapan yang disimpan dalam `puzzle.db` harus dilindungi mengikut keperluan keselamatan organisasi anda.
 
 ## Sumbangan
