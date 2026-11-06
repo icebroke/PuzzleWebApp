@@ -25,6 +25,8 @@ Pengguna boleh memasukkan nama dan ID pemain, menyimpan kemajuan jawapan, mengha
 - Penyederhanaan trafik dengan rate limiting
 - Keselamatan tambahan melalui CSP (Content Security Policy)
 - Pangkalan data SQLite yang dicipta dan disemai secara automatik
+- Susun atur teka silang kata 16 × 18 dengan persilangan jawapan yang disahkan
+- Kemajuan pemain sedia ada dikekalkan apabila kedudukan jawapan dikemas kini
 
 ## Teknologi yang digunakan
 
@@ -138,7 +140,14 @@ Selepas log masuk, pentadbir boleh:
 
 ## Pangkalan data dan benih data
 
-Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. Jika data masih belum wujud, `CrosswordSeed` akan menyemai teka silang kata awal serta soalan berkaitan integriti dan tadbir urus.
+Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Kemajuan pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
+
+### Kemas kini utama: susun atur teka silang kata
+
+- Grid semasa mempunyai 16 baris dan 18 lajur.
+- Kedudukan petunjuk disusun supaya jawapan bersilang pada huruf yang sama dan setiap petunjuk mempunyai petak mula tersendiri.
+- Susun atur disahkan semasa aplikasi dimulakan: semua jawapan berada dalam grid dan bersambung melalui persilangan, tanpa konflik huruf atau jujukan huruf tambahan yang bukan jawapan.
+- Saiz paparan grid mengikuti dimensi baris dan lajur. Apabila susun atur pangkalan data dikemas kini, huruf pemain dipindahkan berdasarkan petunjuk dan kedudukannya dalam jawapan; huruf pada persilangan yang bercanggah tidak dibawa ke petak baharu.
 
 ## Peringatan
 
@@ -156,10 +165,9 @@ In progres.
 
 ## TODO
 
-- [x]Fix the answer input to follow the direction.
+- [x] Fix the answer input to follow the direction.
 - [x] Change the title to 'Kuiz Silang Kata Bulan Integriti MDHT 2026' in DB.
 - [ ] Fix UI for mobile view.
 - [ ] Fix UX behaviour and also interaction.
 - [ ] 1st round 8 - 12 November 2026, 17:00
-- [ ] 2nd round 15 - 19 November 2026, 17:00
 - [ ] 2nd round 15 - 19 November 2026, 17:00
