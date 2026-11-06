@@ -1,0 +1,117 @@
+@model PuzzleWebApp.ViewModels.AdminPuzzleEditViewModel
+@using PuzzleWebApp.Models
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Edit teka silang kata" : "Tambah teka silang kata";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Puzzles" class="admin-back-link">← Semua teka silang kata</a>
+            <p class="eyebrow admin-detail-eyebrow">Kandungan</p>
+            <h1>@(isEdit ? "Edit teka silang kata" : "Teka silang kata baharu")</h1>
+            <p class="admin-subtitle">Tajuk, penerangan, grid dan petunjuk</p>
+        </div>
+    </header>
+
+    <form asp-action="@(isEdit ? "EditPuzzle" : "CreatePuzzle")" asp-route-id="@Model.Id" method="post" class="puzzle-editor-form" data-puzzle-form>
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="validation-summary puzzle-validation-summary"></div>
+        <section class="admin-results-panel puzzle-editor-section">
+            <div class="admin-panel-heading">
+                <div><span class="panel-kicker">01 · Maklumat</span><h2>Butiran teka silang kata</h2></div>
+            </div>
+            <div class="puzzle-metadata-grid">
+                <div class="puzzle-field puzzle-field-wide">
+                    <label asp-for="Title">Tajuk</label>
+                    <input asp-for="Title" class="form-control" maxlength="160" autocomplete="off" />
+                    <span asp-validation-for="Title" class="field-validation"></span>
+                </div>
+                <div class="puzzle-field puzzle-field-wide">
+                    <label asp-for="Description">Penerangan</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" maxlength="1000"></textarea>
+                    <span asp-validation-for="Description" class="field-validation"></span>
+                </div>
+                <div class="puzzle-field">
+                    <label asp-for="Rows">Baris grid</label>
+                    <input asp-for="Rows" type="number" class="form-control" min="3" max="30" />
+                    <span asp-validation-for="Rows" class="field-validation"></span>
+                </div>
+                <div class="puzzle-field">
+                    <label asp-for="Columns">Lajur grid</label>
+                    <input asp-for="Columns" type="number" class="form-control" min="3" max="30" />
+                    <span asp-validation-for="Columns" class="field-validation"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-results-panel puzzle-editor-section">
+            <div class="admin-panel-heading puzzle-clue-heading">
+                <div><span class="panel-kicker">02 · Kandungan</span><h2>Petunjuk dan jawapan</h2></div>
+                <button type="button" class="btn btn-outline-secondary puzzle-add-clue" data-add-clue>Tambah petunjuk</button>
+            </div>
+            <div class="puzzle-clue-list" data-clue-list>
+                @for (var index = 0; index < Model.Clues.Count; index++)
+                {
+                    var clue = Model.Clues[index];
+                    <fieldset class="puzzle-clue-row" data-clue-row>
+                        <legend>Petunjuk @(index + 1)</legend>
+                        <button type="button" class="puzzle-remove-clue" data-remove-clue aria-label="Buang petunjuk @(index + 1)">Buang</button>
+                        <div class="puzzle-clue-fields">
+                            <div class="puzzle-field">
+                                <label for="Clues_@(index)__Number">Nombor</label>
+                                <input id="Clues_@(index)__Number" name="Clues[@index].Number" type="number" min="1" max="999" class="form-control" value="@clue.Number" required />
+                            </div>
+                            <div class="puzzle-field">
+                                <label for="Clues_@(index)__Direction">Arah</label>
+                                <select id="Clues_@(index)__Direction" name="Clues[@index].Direction" class="form-select">
+                                    <option value="Across" selected="@(clue.Direction == CrosswordDirection.Across)">Melintang</option>
+                                    <option value="Down" selected="@(clue.Direction == CrosswordDirection.Down)">Menegak</option>
+                                </select>
+                            </div>
+                            <div class="puzzle-field puzzle-field-wide">
+                                <label for="Clues_@(index)__Text">Petunjuk</label>
+                                <input id="Clues_@(index)__Text" name="Clues[@index].Text" class="form-control" maxlength="240" value="@clue.Text" required />
+                            </div>
+                            <div class="puzzle-field">
+                                <label for="Clues_@(index)__Answer">Jawapan</label>
+                                <input id="Clues_@(index)__Answer" name="Clues[@index].Answer" class="form-control puzzle-answer-input" maxlength="30" value="@clue.Answer" required />
+                            </div>
+                            <div class="puzzle-field">
+                                <label for="Clues_@(index)__StartRow">Baris mula</label>
+                                <input id="Clues_@(index)__StartRow" name="Clues[@index].StartRow" type="number" min="0" max="29" class="form-control" value="@clue.StartRow" required />
+                            </div>
+                            <div class="puzzle-field">
+                                <label for="Clues_@(index)__StartColumn">Lajur mula</label>
+                                <input id="Clues_@(index)__StartColumn" name="Clues[@index].StartColumn" type="number" min="0" max="29" class="form-control" value="@clue.StartColumn" required />
+                            </div>
+                        </div>
+                    </fieldset>
+                }
+            </div>
+        </section>
+        <footer class="puzzle-editor-footer">
+            <a asp-action="Puzzles" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-primary" data-loading-text="Sedang menyimpan…">
+                <span data-button-label>@(isEdit ? "Simpan perubahan" : "Cipta teka silang kata")</span>
+                <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+            </button>
+        </footer>
+    </form>
+</main>
+
+<template id="puzzle-clue-template">
+    <fieldset class="puzzle-clue-row" data-clue-row>
+        <legend>Petunjuk <span data-clue-number></span></legend>
+        <button type="button" class="puzzle-remove-clue" data-remove-clue aria-label="Buang petunjuk">Buang</button>
+        <div class="puzzle-clue-fields">
+            <div class="puzzle-field"><label data-label="Number">Nombor</label><input data-name="Number" type="number" min="1" max="999" class="form-control" value="1" required /></div>
+            <div class="puzzle-field"><label data-label="Direction">Arah</label><select data-name="Direction" class="form-select"><option value="Across">Melintang</option><option value="Down">Menegak</option></select></div>
+            <div class="puzzle-field puzzle-field-wide"><label data-label="Text">Petunjuk</label><input data-name="Text" class="form-control" maxlength="240" required /></div>
+            <div class="puzzle-field"><label data-label="Answer">Jawapan</label><input data-name="Answer" class="form-control puzzle-answer-input" maxlength="30" required /></div>
+            <div class="puzzle-field"><label data-label="StartRow">Baris mula</label><input data-name="StartRow" type="number" min="0" max="29" class="form-control" value="0" required /></div>
+            <div class="puzzle-field"><label data-label="StartColumn">Lajur mula</label><input data-name="StartColumn" type="number" min="0" max="29" class="form-control" value="0" required /></div>
+        </div>
+    </fieldset>
+</template>

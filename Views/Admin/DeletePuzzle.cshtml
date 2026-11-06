@@ -1,0 +1,26 @@
+@model PuzzleWebApp.ViewModels.AdminPuzzleSummaryViewModel
+@{
+    ViewData["Title"] = "Padam teka silang kata";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Puzzles" class="admin-back-link">← Semua teka silang kata</a>
+            <p class="eyebrow admin-detail-eyebrow">Pengesahan</p>
+            <h1>Padam teka silang kata?</h1>
+            <p class="admin-subtitle">Tindakan ini tidak boleh dibuat asal.</p>
+        </div>
+    </header>
+    <section class="admin-results-panel puzzle-delete-panel">
+        <span class="panel-kicker">@Model.Rows × @Model.Columns · @Model.ClueCount petunjuk</span>
+        <h2>@Model.Title</h2>
+        <p>@Model.Description</p>
+        <p class="puzzle-delete-warning">Semua @Model.AttemptCount percubaan pemain dan jawapannya juga akan dipadam.</p>
+        <form asp-action="DeletePuzzleConfirmed" asp-route-id="@Model.Id" method="post" class="puzzle-delete-actions">
+            @Html.AntiForgeryToken()
+            <a asp-action="Puzzles" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-danger">Padam teka silang kata</button>
+        </form>
+    </section>
+</main>

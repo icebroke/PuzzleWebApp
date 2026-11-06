@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PuzzleWebApp.Data;
+using PuzzleWebApp.Models;
 using PuzzleWebApp.Services;
 using PuzzleWebApp.ViewModels;
 
@@ -76,7 +77,7 @@ public class AdminController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        var crossword = await _db.Crosswords
+        var crossword = await GetLiveCrosswordQuery()
             .AsNoTracking()
             .Include(item => item.Clues)
             .FirstAsync();
@@ -148,6 +149,190 @@ public class AdminController : Controller
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> Puzzles()
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var liveId = await GetLiveCrosswordQuery()
+            .Select(crossword => (int?)crossword.Id)
+            .FirstOrDefaultAsync();
+        var puzzles = await _db.Crosswords
+            .AsNoTracking()
+            .OrderByDescending(crossword => crossword.CreatedAtUtc)
+            .ThenByDescending(crossword => crossword.Id)
+            .Select(crossword => new AdminPuzzleSummaryViewModel
+            {
+                Id = crossword.Id,
+                Title = crossword.Title,
+                Description = crossword.Description,
+                Rows = crossword.Rows,
+                Columns = crossword.Columns,
+                ClueCount = crossword.Clues.Count,
+                AttemptCount = crossword.Attempts.Count,
+                IsLive = crossword.Id == liveId
+            })
+            .ToListAsync();
+
+        return View(new AdminPuzzleListViewModel { Puzzles = puzzles });
+    }
+
+    [HttpGet]
+    public IActionResult CreatePuzzle()
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        return View("PuzzleForm", new AdminPuzzleEditViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreatePuzzle(AdminPuzzleEditViewModel model)
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        NormalizeAndValidatePuzzle(model);
+        if (!ModelState.IsValid)
+        {
+            return View("PuzzleForm", model);
+        }
+
+        _db.Crosswords.Add(new Crossword
+        {
+            Title = model.Title,
+            Description = model.Description,
+            Rows = model.Rows,
+            Columns = model.Columns,
+            Clues = model.Clues.Select(ToClue).ToList()
+        });
+        await _db.SaveChangesAsync();
+        TempData["AdminNotice"] = "Teka silang kata baharu telah ditambah dan kini aktif.";
+        return RedirectToAction(nameof(Puzzles));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditPuzzle(int id)
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var crossword = await _db.Crosswords.AsNoTracking()
+            .Include(item => item.Clues)
+            .SingleOrDefaultAsync(item => item.Id == id);
+        if (crossword is null)
+        {
+            return NotFound();
+        }
+
+        return View("PuzzleForm", ToEditModel(crossword));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditPuzzle(int id, AdminPuzzleEditViewModel model)
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var crossword = await _db.Crosswords
+            .Include(item => item.Clues)
+            .SingleOrDefaultAsync(item => item.Id == id);
+        if (crossword is null)
+        {
+            return NotFound();
+        }
+
+        model.Id = id;
+        NormalizeAndValidatePuzzle(model);
+        if (!ModelState.IsValid)
+        {
+            return View("PuzzleForm", model);
+        }
+
+        crossword.Title = model.Title;
+        crossword.Description = model.Description;
+        crossword.Rows = model.Rows;
+        crossword.Columns = model.Columns;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        _db.CrosswordClues.RemoveRange(crossword.Clues);
+        await _db.SaveChangesAsync();
+        crossword.Clues = model.Clues.Select(ToClue).ToList();
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        TempData["AdminNotice"] = "Perubahan teka silang kata telah disimpan.";
+        return RedirectToAction(nameof(Puzzles));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DeletePuzzle(int id)
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (await _db.Crosswords.CountAsync() <= 1)
+        {
+            TempData["AdminNotice"] = "Sekurang-kurangnya satu teka silang kata mesti dikekalkan.";
+            return RedirectToAction(nameof(Puzzles));
+        }
+
+        var crossword = await _db.Crosswords.AsNoTracking()
+            .Select(item => new AdminPuzzleSummaryViewModel
+            {
+                Id = item.Id,
+                Title = item.Title,
+                Description = item.Description,
+                Rows = item.Rows,
+                Columns = item.Columns,
+                ClueCount = item.Clues.Count,
+                AttemptCount = item.Attempts.Count
+            })
+            .SingleOrDefaultAsync(item => item.Id == id);
+        return crossword is null ? NotFound() : View(crossword);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeletePuzzleConfirmed(int id)
+    {
+        if (!IsAuthenticated())
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (await _db.Crosswords.CountAsync() <= 1)
+        {
+            TempData["AdminNotice"] = "Sekurang-kurangnya satu teka silang kata mesti dikekalkan.";
+            return RedirectToAction(nameof(Puzzles));
+        }
+
+        var crossword = await _db.Crosswords.SingleOrDefaultAsync(item => item.Id == id);
+        if (crossword is null)
+        {
+            return NotFound();
+        }
+
+        _db.Crosswords.Remove(crossword);
+        await _db.SaveChangesAsync();
+        TempData["AdminNotice"] = "Teka silang kata dan semua rekod percubaannya telah dipadam.";
+        return RedirectToAction(nameof(Puzzles));
+    }
+
+    [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Attempt(int id)
     {
         if (!IsAuthenticated())
@@ -204,6 +389,107 @@ public class AdminController : Controller
 
     private bool IsAuthenticated() =>
         HttpContext.Session.GetString(AdminSessionKey) == "true";
+
+    private IQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
+        .OrderByDescending(crossword => crossword.CreatedAtUtc)
+        .ThenByDescending(crossword => crossword.Id);
+
+    private void NormalizeAndValidatePuzzle(AdminPuzzleEditViewModel model)
+    {
+        model.Title = model.Title?.Trim() ?? string.Empty;
+        model.Description = model.Description?.Trim() ?? string.Empty;
+        model.Clues ??= [];
+        foreach (var clue in model.Clues)
+        {
+            clue.Text = clue.Text?.Trim() ?? string.Empty;
+            clue.Answer = new string((clue.Answer ?? string.Empty)
+                .Where(character => !char.IsWhiteSpace(character))
+                .Select(char.ToUpperInvariant)
+                .ToArray());
+        }
+
+        if (model.Clues.Count == 0)
+        {
+            ModelState.AddModelError(nameof(model.Clues), "Tambah sekurang-kurangnya satu petunjuk.");
+            return;
+        }
+
+        if (model.Clues.GroupBy(clue => (clue.Number, clue.Direction)).Any(group => group.Count() > 1))
+        {
+            ModelState.AddModelError(nameof(model.Clues), "Nombor petunjuk tidak boleh berulang dalam arah yang sama.");
+        }
+
+        var occupied = new Dictionary<(int Row, int Column), List<(CrosswordDirection Direction, char Letter)>>();
+        foreach (var clue in model.Clues)
+        {
+            if (string.IsNullOrWhiteSpace(clue.Text) || string.IsNullOrEmpty(clue.Answer) ||
+                clue.Answer.Any(letter => letter is < 'A' or > 'Z'))
+            {
+                if (!string.IsNullOrEmpty(clue.Answer) && clue.Answer.Any(letter => letter is < 'A' or > 'Z'))
+                {
+                    ModelState.AddModelError(nameof(model.Clues), $"Jawapan petunjuk {clue.Number} mesti menggunakan huruf A hingga Z sahaja.");
+                }
+                continue;
+            }
+
+            for (var index = 0; index < clue.Answer.Length; index++)
+            {
+                var row = clue.StartRow + (clue.Direction == CrosswordDirection.Down ? index : 0);
+                var column = clue.StartColumn + (clue.Direction == CrosswordDirection.Across ? index : 0);
+                if (row >= model.Rows || column >= model.Columns)
+                {
+                    ModelState.AddModelError(nameof(model.Clues), $"Petunjuk {clue.Number} melangkaui grid {model.Rows} × {model.Columns}.");
+                    break;
+                }
+
+                var cell = (row, column);
+                if (!occupied.TryGetValue(cell, out var letters))
+                {
+                    letters = [];
+                    occupied.Add(cell, letters);
+                }
+
+                letters.Add((clue.Direction, clue.Answer[index]));
+            }
+        }
+
+        if (occupied.Values.Any(letters =>
+                letters.Count(item => item.Direction == CrosswordDirection.Across) > 1 ||
+                letters.Count(item => item.Direction == CrosswordDirection.Down) > 1 ||
+                letters.Select(item => item.Letter).Distinct().Count() > 1))
+        {
+            ModelState.AddModelError(nameof(model.Clues), "Petunjuk bertindih atau jawapan pada persilangan tidak sepadan.");
+        }
+    }
+
+    private static CrosswordClue ToClue(AdminPuzzleClueEditViewModel clue) => new()
+    {
+        Number = clue.Number,
+        Text = clue.Text.Trim(),
+        Answer = clue.Answer,
+        StartRow = clue.StartRow,
+        StartColumn = clue.StartColumn,
+        Direction = clue.Direction
+    };
+
+    private static AdminPuzzleEditViewModel ToEditModel(Crossword crossword) => new()
+    {
+        Id = crossword.Id,
+        Title = crossword.Title,
+        Description = crossword.Description,
+        Rows = crossword.Rows,
+        Columns = crossword.Columns,
+        Clues = crossword.Clues.OrderBy(clue => clue.Number).ThenBy(clue => clue.Direction)
+            .Select(clue => new AdminPuzzleClueEditViewModel
+            {
+                Number = clue.Number,
+                Text = clue.Text,
+                Answer = clue.Answer,
+                StartRow = clue.StartRow,
+                StartColumn = clue.StartColumn,
+                Direction = clue.Direction
+            }).ToList()
+    };
 
     private static Dictionary<string, string> DeserializeAnswers(string answersJson) =>
         JsonSerializer.Deserialize<Dictionary<string, string>>(answersJson)

@@ -11,6 +11,66 @@ public class AdminLoginViewModel
     public string? ErrorMessage { get; set; }
 }
 
+public class AdminPuzzleListViewModel
+{
+    public List<AdminPuzzleSummaryViewModel> Puzzles { get; set; } = [];
+}
+
+public class AdminPuzzleSummaryViewModel
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int Rows { get; set; }
+    public int Columns { get; set; }
+    public int ClueCount { get; set; }
+    public int AttemptCount { get; set; }
+    public bool IsLive { get; set; }
+}
+
+public class AdminPuzzleEditViewModel
+{
+    public int? Id { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(160)]
+    public string Title { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(1000)]
+    public string Description { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Range(3, 30)]
+    public int Rows { get; set; } = 15;
+
+    [System.ComponentModel.DataAnnotations.Range(3, 30)]
+    public int Columns { get; set; } = 15;
+
+    public List<AdminPuzzleClueEditViewModel> Clues { get; set; } = [];
+}
+
+public class AdminPuzzleClueEditViewModel
+{
+    [System.ComponentModel.DataAnnotations.Range(1, 999)]
+    public int Number { get; set; } = 1;
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(240)]
+    public string Text { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(30)]
+    public string Answer { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Range(0, 29)]
+    public int StartRow { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Range(0, 29)]
+    public int StartColumn { get; set; }
+
+    public PuzzleWebApp.Models.CrosswordDirection Direction { get; set; }
+}
+
 public class AdminOverviewViewModel
 {
     public string CrosswordTitle { get; set; } = string.Empty;

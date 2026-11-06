@@ -21,7 +21,7 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var crossword = await _db.Crosswords.AsNoTracking().FirstAsync();
+        var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstAsync();
         return View(new CrosswordJoinViewModel
         {
             CrosswordTitle = crossword.Title,
@@ -50,13 +50,13 @@ public class HomeController : Controller
 
         if (!ModelState.IsValid)
         {
-            var crossword = await _db.Crosswords.AsNoTracking().FirstAsync();
+            var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstAsync();
             model.CrosswordTitle = crossword.Title;
             model.CrosswordDescription = crossword.Description;
             return View("Index", model);
         }
 
-        var currentCrossword = await _db.Crosswords.FirstAsync();
+        var currentCrossword = await GetLiveCrosswordQuery().FirstAsync();
         var normalizedPlayerId = model.PlayerId.ToUpperInvariant();
         var attempt = await _db.CrosswordAttempts.SingleOrDefaultAsync(existing =>
             existing.CrosswordId == currentCrossword.Id &&
@@ -272,6 +272,10 @@ public class HomeController : Controller
     }
 
     private static string GetClueKey(CrosswordClue clue) => $"{clue.Direction}-{clue.Number}";
+
+    private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() => _db.Crosswords
+        .OrderByDescending(crossword => crossword.CreatedAtUtc)
+        .ThenByDescending(crossword => crossword.Id);
 
     private static bool TryNormalizeAnswers(
         Crossword crossword,

@@ -25,6 +25,65 @@
 
   window.AppUi = { setButtonLoading };
 
+  const puzzleForm = document.querySelector("[data-puzzle-form]");
+  if (puzzleForm) {
+    const clueList = puzzleForm.querySelector("[data-clue-list]");
+    const clueTemplate = document.querySelector("#puzzle-clue-template");
+
+    function reindexClues() {
+      const rows = [...clueList.querySelectorAll("[data-clue-row]")];
+      rows.forEach((row, index) => {
+        row.querySelector("legend").innerHTML = `Petunjuk ${index + 1}`;
+        const removeButton = row.querySelector("[data-remove-clue]");
+        removeButton.setAttribute("aria-label", `Buang petunjuk ${index + 1}`);
+
+        row.querySelectorAll("[data-name]").forEach((field) => {
+          const property = field.dataset.name;
+          const id = `Clues_${index}__${property}`;
+          field.name = `Clues[${index}].${property}`;
+          field.id = id;
+          row.querySelector(`[data-label='${property}']`).htmlFor = id;
+        });
+
+        row.querySelectorAll("input[name^='Clues['], select[name^='Clues[']").forEach((field) => {
+          if (field.dataset.name) return;
+          const property = field.name.match(/\]\.([A-Za-z]+)/)?.[1];
+          if (!property) return;
+          const id = `Clues_${index}__${property}`;
+          const label = row.querySelector(`label[for='${field.id}']`);
+          field.name = `Clues[${index}].${property}`;
+          field.id = id;
+          if (label) label.htmlFor = id;
+        });
+      });
+    }
+
+    puzzleForm.addEventListener("click", (event) => {
+      const addButton = event.target.closest("[data-add-clue]");
+      if (addButton) {
+        const row = clueTemplate.content.firstElementChild.cloneNode(true);
+        const nextNumber = clueList.querySelectorAll("[data-clue-row]").length + 1;
+        row.querySelector("[data-name='Number']").value = nextNumber;
+        clueList.append(row);
+        reindexClues();
+        row.querySelector("[data-name='Text']")?.focus();
+        return;
+      }
+
+      const removeButton = event.target.closest("[data-remove-clue]");
+      if (removeButton) {
+        removeButton.closest("[data-clue-row]").remove();
+        reindexClues();
+      }
+    });
+
+    if (clueList.children.length === 0) {
+      const row = clueTemplate.content.firstElementChild.cloneNode(true);
+      clueList.append(row);
+    }
+    reindexClues();
+  }
+
   document.addEventListener("submit", async (event) => {
     const form = event.target;
     if (

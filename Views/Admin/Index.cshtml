@@ -9,17 +9,20 @@
 <main class="admin-page">
     <header class="admin-header">
         <div>
-            <p class="eyebrow">Papan pemuka baca sahaja</p>
+            <p class="eyebrow">Pengurusan pentadbir</p>
             <h1>Keputusan keseluruhan</h1>
             <p class="admin-subtitle">@Model.CrosswordTitle</p>
         </div>
-        <form asp-action="Logout" method="post" data-ajax-form>
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-secondary admin-logout" data-loading-text="Sedang log keluar…">
-                <span data-button-label>Log keluar</span>
-                <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
-            </button>
-        </form>
+        <nav class="admin-header-actions" aria-label="Tindakan pentadbir">
+            <a asp-action="Puzzles" class="btn btn-primary admin-manage-link">Urus teka silang kata</a>
+            <form asp-action="Logout" method="post" data-ajax-form>
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-secondary admin-logout" data-loading-text="Sedang log keluar…">
+                    <span data-button-label>Log keluar</span>
+                    <span class="button-spinner" data-button-spinner aria-hidden="true" hidden></span>
+                </button>
+            </form>
+        </nav>
     </header>
 
     <section class="admin-stats" aria-label="Statistik keseluruhan">

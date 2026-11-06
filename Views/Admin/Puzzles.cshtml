@@ -1,0 +1,70 @@
+@model PuzzleWebApp.ViewModels.AdminPuzzleListViewModel
+@{
+    ViewData["Title"] = "Urus teka silang kata";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Index" class="admin-back-link">← Keputusan keseluruhan</a>
+            <p class="eyebrow admin-detail-eyebrow">Kandungan</p>
+            <h1>Urus teka silang kata</h1>
+            <p class="admin-subtitle">Puzzle terkini menjadi teka silang kata yang dipaparkan kepada pemain.</p>
+        </div>
+        <nav class="admin-header-actions" aria-label="Tindakan pentadbir">
+            <a asp-action="CreatePuzzle" class="btn btn-primary admin-manage-link">Tambah teka silang kata</a>
+            <form asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-secondary admin-logout">Log keluar</button>
+            </form>
+        </nav>
+    </header>
+
+    @if (TempData["AdminNotice"] is string notice)
+    {
+        <p class="admin-notice" role="status">@notice</p>
+    }
+
+    <section class="admin-results-panel puzzle-list-panel">
+        <div class="admin-panel-heading">
+            <div><span class="panel-kicker">Pustaka kandungan</span><h2>Semua teka silang kata</h2></div>
+            <span class="clue-count">@Model.Puzzles.Count</span>
+        </div>
+        @if (Model.Puzzles.Count == 0)
+        {
+            <p class="admin-empty">Tiada teka silang kata ditemui.</p>
+        }
+        else
+        {
+            <div class="puzzle-list">
+                @foreach (var puzzle in Model.Puzzles)
+                {
+                    <article class="puzzle-list-item @(puzzle.IsLive ? "is-live" : "")">
+                        <div class="puzzle-list-copy">
+                            <div class="puzzle-list-title">
+                                <h3>@puzzle.Title</h3>
+                                @if (puzzle.IsLive)
+                                {
+                                    <span class="admin-status is-submitted">Sedang aktif</span>
+                                }
+                            </div>
+                            <p>@puzzle.Description</p>
+                            <div class="puzzle-list-meta">
+                                <span>@puzzle.Rows × @puzzle.Columns petak</span>
+                                <span>@puzzle.ClueCount petunjuk</span>
+                                <span>@puzzle.AttemptCount percubaan</span>
+                            </div>
+                        </div>
+                        <div class="puzzle-list-actions">
+                            <a asp-action="EditPuzzle" asp-route-id="@puzzle.Id" class="btn btn-outline-secondary">Edit</a>
+                            @if (Model.Puzzles.Count > 1)
+                            {
+                                <a asp-action="DeletePuzzle" asp-route-id="@puzzle.Id" class="puzzle-delete-link">Padam</a>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</main>

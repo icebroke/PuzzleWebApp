@@ -14,9 +14,14 @@ public static class CrosswordSeed
         var clues = CreateClues();
         ValidateLayout(clues);
 
-        var existing = db.Crosswords.FirstOrDefault();
+        var existing = db.Crosswords.SingleOrDefault(crossword => crossword.Id == 1);
         if (existing is null)
         {
+            if (db.Crosswords.Any())
+            {
+                return;
+            }
+
             db.Crosswords.Add(new Crossword
             {
                 Id = 1,
@@ -28,12 +33,6 @@ public static class CrosswordSeed
             });
             db.SaveChanges();
             return;
-        }
-
-        const string description = "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.";
-        if (existing.Description != description)
-        {
-            existing.Description = description;
         }
 
         var existingClues = db.CrosswordClues
