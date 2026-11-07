@@ -12,6 +12,7 @@
             <p class="eyebrow">Pengurusan pentadbir</p>
             <h1>Keputusan keseluruhan</h1>
             <p class="admin-subtitle">@Model.CrosswordTitle</p>
+            <p class="admin-subtitle">Kedudukan dikira daripada jumlah jawapan betul kedua-dua pusingan. Jika jumlah seri, nilai soalan kreativiti untuk menentukan tempat podium.</p>
         </div>
         <nav class="admin-header-actions" aria-label="Tindakan pentadbir">
             <a asp-action="Puzzles" class="btn btn-primary admin-manage-link">Urus teka silang kata</a>
@@ -27,14 +28,14 @@
 
     <section class="admin-stats" aria-label="Statistik keseluruhan">
         <article class="admin-stat-card"><span>Pemain</span><strong>@Model.TotalAttempts</strong><small>telah memulakan teka silang kata</small></article>
-        <article class="admin-stat-card"><span>Dihantar</span><strong>@Model.SubmittedAttempts</strong><small>penghantaran akhir</small></article>
-        <article class="admin-stat-card"><span>Jawapan betul</span><strong>@Model.TotalCorrectAnswers <small>/ @Model.TotalSubmittedAnswers</small></strong><small>daripada permainan yang dihantar</small></article>
+        <article class="admin-stat-card"><span>Lengkap</span><strong>@Model.SubmittedAttempts</strong><small>kedua-dua pusingan dihantar</small></article>
+        <article class="admin-stat-card"><span>Jawapan betul</span><strong>@Model.TotalCorrectAnswers <small>/ @Model.TotalSubmittedAnswers</small></strong><small>untuk pemain yang melengkapkan kedua-dua pusingan</small></article>
         <article class="admin-stat-card"><span>Ketepatan keseluruhan</span><strong>@accuracy%</strong><small>jawapan yang dihantar sahaja</small></article>
     </section>
 
     <section class="admin-results-panel">
         <div class="admin-panel-heading">
-            <div><span class="panel-kicker">Peserta</span><h2>Keputusan pemain</h2></div>
+            <div><span class="panel-kicker">Peserta</span><h2>Kedudukan dan keputusan pusingan</h2></div>
             <span class="clue-count">@Model.TotalFilteredAttempts</span>
         </div>
         <form asp-action="Index" method="get" class="admin-filter-form">
@@ -64,11 +65,12 @@
                         <tr>
                             <th scope="col">Pemain</th>
                             <th scope="col">ID pemain</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Dijawab</th>
-                            <th scope="col">Betul</th>
-                            <th scope="col">Masa dihantar</th>
-                            <th scope="col"><span class="visually-hidden">Semakan</span></th>
+                            <th scope="col">Tempat</th>
+                            <th scope="col">Pusingan 1</th>
+                            <th scope="col">Pusingan 2</th>
+                            <th scope="col">Jumlah betul</th>
+                            <th scope="col">Penilaian kreativiti</th>
+                            <th scope="col">Semakan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,45 +79,86 @@
                         <tr>
                             <td class="admin-player-name" data-label="Pemain">@attempt.PlayerName</td>
                             <td data-label="ID pemain"><span class="admin-player-id">@attempt.PlayerId</span></td>
-                            <td data-label="Status">
-                                @if (attempt.SubmittedAtUtc.HasValue)
+                            <td data-label="Tempat">
+                                @if (attempt.OverallPlace.HasValue)
                                 {
-                                    <span class="admin-status is-submitted">Dihantar</span>
+                                    <strong>@(attempt.OverallPlace.Value == 1 ? "Pemenang" : attempt.OverallPlace.Value == 2 ? "Tempat kedua" : attempt.OverallPlace.Value == 3 ? "Tempat ketiga" : $"#{attempt.OverallPlace.Value}")</strong>
                                 }
                                 else
                                 {
-                                    <span class="admin-status is-in-progress">Sedang bermain</span>
+                                    <span class="admin-score-total">@(attempt.IsComplete ? "Seri · perlu penilaian" : "Belum lengkap")</span>
                                 }
                             </td>
-                            <td data-label="Dijawab">@attempt.AnsweredCount / @attempt.TotalClues</td>
-                            <td data-label="Betul">
-                                @if (attempt.SubmittedAtUtc.HasValue)
+                            <td data-label="Pusingan 1">
+                                @if (attempt.RoundOneSubmitted)
                                 {
-                                    <strong>@attempt.CorrectCount</strong><span class="admin-score-total"> / @attempt.TotalClues</span>
+                                    <strong>@attempt.RoundOneCorrectCount</strong><span class="admin-score-total"> / @attempt.RoundOneTotalClues</span>
                                 }
                                 else
                                 {
-                                    <span class="admin-score-total">—</span>
+                                    <span class="admin-score-total">@(attempt.RoundOneAttemptId.HasValue ? "Sedang bermain" : "Belum bermula")</span>
                                 }
                             </td>
-                            <td data-label="Masa dihantar">
-                                @if (attempt.SubmittedAtUtc.HasValue)
+                            <td data-label="Pusingan 2">
+                                @if (attempt.RoundTwoSubmitted)
                                 {
-                                    @attempt.SubmittedAtUtc.Value.ToLocalTime().ToString("g")
+                                    <strong>@attempt.RoundTwoCorrectCount</strong><span class="admin-score-total"> / @attempt.RoundTwoTotalClues</span>
                                 }
                                 else
                                 {
-                                    <span class="admin-score-total">—</span>
+                                    <span class="admin-score-total">@(attempt.RoundTwoAttemptId.HasValue ? "Sedang bermain" : "Belum bermula")</span>
                                 }
                             </td>
-                            <td data-label="Semakan"><a asp-action="Attempt" asp-route-id="@attempt.Id" class="admin-review-link">Semak jawapan <span aria-hidden="true">→</span></a></td>
+                            <td data-label="Jumlah betul"><strong>@attempt.TotalCorrectCount</strong><span class="admin-score-total"> / @(attempt.RoundOneTotalClues + attempt.RoundTwoTotalClues)</span></td>
+                            <td data-label="Penilaian kreativiti">
+                                @if (attempt.IsTiedOnTotal && attempt.RoundTwoCreativeSubmitted && attempt.RoundTwoAttemptId.HasValue)
+                                {
+                                    <form asp-action="SetCreativeJudgmentPlace" method="post" class="creative-judgment-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="attemptId" value="@attempt.RoundTwoAttemptId.Value" />
+                                        <input type="hidden" name="q" value="@Model.SearchTerm" />
+                                        <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                        <input type="hidden" name="page" value="@Model.CurrentPage" />
+                                        <select name="creativeJudgmentOrder" class="form-select" aria-label="Keutamaan penilaian kreativiti untuk @attempt.PlayerName">
+                                            <option value="">Belum dinilai</option>
+                                            @foreach (var order in attempt.CreativeJudgmentOptions)
+                                            {
+                                                <option value="@order" selected="@(attempt.CreativeJudgmentOrder == order)">Pilihan @order dalam seri</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-secondary">Simpan</button>
+                                    </form>
+                                }
+                                else if (attempt.IsTiedOnTotal && !attempt.RoundTwoCreativeSubmitted)
+                                {
+                                    <span class="admin-score-total">Menunggu jawapan kreatif</span>
+                                }
+                                else if (!attempt.IsTiedOnTotal)
+                                {
+                                    <span class="admin-score-total">Tidak seri</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-score-total">Menunggu pusingan 2</span>
+                                }
+                            </td>
+                            <td data-label="Semakan" class="admin-round-review-links">
+                                @if (attempt.RoundOneAttemptId.HasValue)
+                                {
+                                    <a asp-action="Attempt" asp-route-id="@attempt.RoundOneAttemptId.Value" class="admin-review-link">Semak pusingan 1 <span aria-hidden="true">→</span></a>
+                                }
+                                @if (attempt.RoundTwoAttemptId.HasValue)
+                                {
+                                    <a asp-action="Attempt" asp-route-id="@attempt.RoundTwoAttemptId.Value" class="admin-review-link">Semak pusingan 2 <span aria-hidden="true">→</span></a>
+                                }
+                            </td>
                         </tr>
                     }
                     </tbody>
                 </table>
             </div>
             <footer class="admin-list-footer">
-                <p>Memaparkan <strong>@Model.FirstItemNumber–@Model.LastItemNumber</strong> daripada <strong>@Model.TotalFilteredAttempts</strong> pemain</p>
+                        <p>Memaparkan <strong>@Model.FirstItemNumber–@Model.LastItemNumber</strong> daripada <strong>@Model.TotalFilteredAttempts</strong> pemain</p>
                 <nav class="admin-pagination" aria-label="Halaman keputusan pemain">
                     @if (Model.CurrentPage > 1)
                     {

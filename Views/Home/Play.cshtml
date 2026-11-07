@@ -51,7 +51,7 @@
                      role="timer"
                      aria-label="Masa keseluruhan teka silang kata">
                     <span class="puzzle-timer-label">@(Model.TimeExpired ? "Masa tamat" : Model.IsSubmitted ? "Jawapan dihantar" : $"Masa keseluruhan · {Model.TimeLimitMinutes} minit")</span>
-                    <strong id="remaining-time">@(Model.IsSubmitted ? Model.TimeExpired ? "00:00" : "Selesai" : $"{Model.RemainingSeconds / 60:00}:{Model.RemainingSeconds % 60:00}")</strong>
+                            <strong id="remaining-time">@(Model.IsSubmitted ? Model.TimeExpired ? "00:00" : "Selesai" : $"{Model.RemainingSeconds / 60:00}:{Model.RemainingSeconds % 60:00}")</strong>
                 </div>
                 <button type="button" class="direction-toggle" id="direction-toggle" aria-label="Tukar arah petunjuk">
                     <span class="direction-icon" aria-hidden="true">↔</span>
@@ -154,6 +154,52 @@
             }
         </aside>
     </section>
+
+    @if (Model.IsRoundTwo && Model.IsSubmitted)
+    {
+        <section class="creative-panel" id="creative-question"
+                 data-remaining-seconds="@Model.CreativeRemainingSeconds"
+                 data-submitted="@Model.IsCreativeSubmitted.ToString().ToLowerInvariant()">
+            <header class="creative-header">
+                <div>
+                    <span class="panel-kicker">Pusingan 2 · Bahagian B</span>
+                    <h2>@Model.CreativeQuestionTitle</h2>
+                </div>
+                @if (!Model.IsCreativeSubmitted)
+                {
+                    <div class="puzzle-timer" id="creative-timer" role="timer" aria-label="Masa menjawab soalan kreativiti">
+                        <span class="puzzle-timer-label">Masa menjawab · 10 minit</span>
+                        <strong id="creative-remaining-time">@($"{Model.CreativeRemainingSeconds / 60:00}:{Model.CreativeRemainingSeconds % 60:00}")</strong>
+                    </div>
+                }
+            </header>
+            <p class="creative-question-text">@Model.CreativeQuestionText</p>
+            <ul class="creative-guidance">
+                @foreach (var guidance in Model.CreativeAnswerGuidance.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <li>@guidance</li>
+                }
+            </ul>
+            @if (Model.IsCreativeSubmitted)
+            {
+                <div class="completion-banner" role="status">
+                    <span class="completion-icon" aria-hidden="true">✓</span>
+                    <div><strong>@(Model.CreativeTimeExpired ? "Masa menjawab telah tamat." : "Jawapan kreativiti telah dihantar.")</strong><span>Jawapan anda tidak boleh diubah lagi.</span></div>
+                </div>
+                <div class="creative-answer-display">@Model.CreativeAnswer</div>
+            }
+            else
+            {
+                <label class="creative-answer-label" for="creative-answer">Pesanan anda</label>
+                <textarea id="creative-answer" class="creative-answer-input" maxlength="5000" rows="7" aria-describedby="creative-save-status">@Model.CreativeAnswer</textarea>
+                <div class="creative-actions">
+                    <span id="creative-save-status" class="creative-save-status" role="status" aria-live="polite">Disimpan secara automatik</span>
+                    <button type="button" class="btn btn-primary" id="submit-creative-answer">Hantar pesanan</button>
+                </div>
+                <p id="creative-feedback" class="submission-feedback" role="status" aria-live="polite"></p>
+            }
+        </section>
+    }
 </main>
 
 @section Scripts {

@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<CrosswordClue> CrosswordClues => Set<CrosswordClue>();
     public DbSet<CrosswordAttempt> CrosswordAttempts => Set<CrosswordAttempt>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<RoundQuestion> RoundQuestions => Set<RoundQuestion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +35,14 @@ public class AppDbContext : DbContext
             .Property(crossword => crossword.Title)
             .HasMaxLength(160);
 
+        modelBuilder.Entity<Crossword>()
+            .Property(crossword => crossword.RoundNumber)
+            .HasDefaultValue(1);
+
+        modelBuilder.Entity<RoundQuestion>()
+            .HasIndex(question => question.RoundNumber)
+            .IsUnique();
+
         modelBuilder.Entity<CrosswordClue>()
             .Property(clue => clue.Direction)
             .HasConversion<string>();
@@ -55,6 +64,15 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CrosswordAttempt>()
             .Property(attempt => attempt.PlayerName)
             .HasMaxLength(100);
+
+        modelBuilder.Entity<CrosswordAttempt>()
+            .Property(attempt => attempt.CreativeAnswer)
+            .HasMaxLength(5000);
+
+        modelBuilder.Entity<CrosswordAttempt>()
+            .ToTable(table => table.HasCheckConstraint(
+                "CK_CrosswordAttempts_CreativeJudgmentOrder",
+                "CreativeJudgmentOrder IS NULL OR CreativeJudgmentOrder >= 1"));
 
         modelBuilder.Entity<CrosswordAttempt>()
             .HasIndex(attempt => new { attempt.CrosswordId, attempt.PlayerId })

@@ -3,6 +3,7 @@ namespace PuzzleWebApp.Models;
 public class Crossword
 {
     public int Id { get; set; }
+    public int RoundNumber { get; set; } = 1;
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Rows { get; set; }

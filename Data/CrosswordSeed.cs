@@ -7,6 +7,7 @@ namespace PuzzleWebApp.Data;
 public static class CrosswordSeed
 {
     private sealed record RoundSeed(
+        int RoundNumber,
         string LegacyTitle,
         string Title,
         string Description,
@@ -18,19 +19,24 @@ public static class CrosswordSeed
     {
         var rounds = CreateRounds();
         var existingPuzzles = db.Crosswords.Include(crossword => crossword.Clues).ToList();
+        var assignedPuzzles = new HashSet<Crossword>();
 
         foreach (var round in rounds)
         {
-            var crossword = existingPuzzles.FirstOrDefault(existing => existing.Title == round.LegacyTitle)
-                ?? existingPuzzles.FirstOrDefault(existing =>
+            var crossword = existingPuzzles.FirstOrDefault(existing =>
                     existing.Title == round.Title
-                    && existing.ScheduledStartAtUtc == round.ScheduledStartAtUtc);
+                    && existing.ScheduledStartAtUtc == round.ScheduledStartAtUtc
+                    && !assignedPuzzles.Contains(existing))
+                ?? existingPuzzles.FirstOrDefault(existing =>
+                    existing.Title == round.LegacyTitle
+                    && !assignedPuzzles.Contains(existing));
             if (crossword is null && round.LegacyTitle.EndsWith("Pusingan 2", StringComparison.Ordinal))
             {
                 crossword = existingPuzzles.FirstOrDefault(existing =>
                     existing.Title == round.Title
                     && !existing.ScheduledStartAtUtc.HasValue
-                    && !existing.ScheduledEndAtUtc.HasValue);
+                    && !existing.ScheduledEndAtUtc.HasValue
+                    && !assignedPuzzles.Contains(existing));
             }
 
             var entries = round.Entries
@@ -47,7 +53,9 @@ public static class CrosswordSeed
                 db.Crosswords.Add(crossword);
                 existingPuzzles.Add(crossword);
             }
+            assignedPuzzles.Add(crossword);
 
+            crossword.RoundNumber = round.RoundNumber;
             crossword.Title = round.Title;
             crossword.Description = round.Description;
             crossword.Rows = layout.Rows;
@@ -79,7 +87,7 @@ public static class CrosswordSeed
 
     private static List<RoundSeed> CreateRounds() =>
     [
-        new RoundSeed("Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
+        new RoundSeed(1, "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
             MalaysiaTimeToUtc(2026, 11, 8, 9), MalaysiaTimeToUtc(2026, 11, 12, 17),
         [
             ("Seorang pegawai terlibat dalam penilaian sebutharga yang disertai oleh syarikat milik ahli keluarganya. Apakah keadaan yang perlu dikenal pasti dan diuruskan oleh pegawai tersebut?", "Konflik Kepentingan"),
@@ -98,7 +106,7 @@ public static class CrosswordSeed
             ("Pihak pengurusan memastikan setiap keputusan perolehan mempunyai justifikasi, rekod pertimbangan dan proses kelulusan yang jelas. Apakah konsep pengurusan yang diamalkan?", "Tadbir Urus"),
             ("Sebuah jabatan menyediakan mekanisme rasmi untuk menerima aduan berkaitan salah laku kakitangan, merekodkan aduan dan menjalankan tindakan susulan. Apakah mekanisme ini?", "Saluran Aduan")
         ]),
-        new RoundSeed("Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
+        new RoundSeed(2, "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Kuiz Silang Kata Bulan Integriti MDHT 2026", "Lengkapkan teka silang kata tentang integriti, akauntabiliti dan tadbir urus yang baik.",
             MalaysiaTimeToUtc(2026, 11, 15, 9), MalaysiaTimeToUtc(2026, 11, 19, 17),
         [
             ("Bagi mengelakkan seorang pegawai mengawal keseluruhan proses pembayaran, organisasi perlu mengamalkan __________ supaya tugas penyediaan, semakan dan kelulusan dilaksanakan oleh individu yang berbeza.", "Pengasingan Tugas"),

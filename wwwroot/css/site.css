@@ -474,6 +474,76 @@ input {
   gap: 22px;
 }
 
+.creative-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(37, 48, 82, 0.045);
+}
+
+.creative-header,
+.creative-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.creative-header h2 {
+  margin: 5px 0 0;
+}
+
+.creative-question-text,
+.creative-guidance {
+  margin: 0;
+  color: #4e5b70;
+  line-height: 1.65;
+}
+
+.creative-guidance {
+  padding-left: 20px;
+}
+
+.creative-answer-label {
+  font-weight: 700;
+}
+
+.creative-answer-input {
+  width: 100%;
+  min-height: 180px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--surface);
+  resize: vertical;
+}
+
+.creative-answer-input:focus {
+  border-color: #427c68;
+  outline: 3px solid rgba(66, 124, 104, 0.15);
+}
+
+.creative-save-status {
+  color: #6f7a91;
+  font-size: 0.82rem;
+}
+
+.creative-answer-display {
+  min-height: 110px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: #35435a;
+  background: #f8faf9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .board-panel,
 .clues-panel {
   min-width: 0;
@@ -1432,6 +1502,36 @@ input {
   margin-left: 3px;
 }
 
+.creative-judgment-form {
+  display: grid;
+  min-width: 190px;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  gap: 6px;
+}
+
+.creative-judgment-form .form-select {
+  min-height: 36px;
+  border-color: #dfe4ea;
+  border-radius: 7px;
+  font-size: 0.76rem;
+}
+
+.creative-judgment-form .btn {
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 0.74rem;
+}
+
+.admin-round-review-links {
+  min-width: 145px;
+}
+
+.admin-round-review-links .admin-review-link {
+  display: block;
+  margin: 3px 0;
+}
+
 .admin-empty {
   margin: 20px 0 4px;
   color: #8590a5;
@@ -1556,6 +1656,20 @@ input {
 }
 
 @media (max-width: 640px) {
+  .creative-header,
+  .creative-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .creative-header .puzzle-timer {
+    text-align: left;
+  }
+
+  .creative-actions .btn {
+    width: 100%;
+  }
+
   .admin-header {
     flex-wrap: wrap;
     gap: 14px;

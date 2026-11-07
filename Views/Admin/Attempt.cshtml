@@ -25,6 +25,16 @@
         </div>
     </header>
 
+    @if (Model.CreativeAnswer.Length > 0)
+    {
+        <section class="admin-results-panel answer-review-panel">
+            <div class="admin-panel-heading">
+                <div><span class="panel-kicker">Pusingan 2 · Bahagian B</span><h2>Jawapan kreativiti</h2></div>
+            </div>
+            <div class="creative-answer-display">@Model.CreativeAnswer</div>
+        </section>
+    }
+
     <section class="admin-results-panel answer-review-panel">
         <div class="admin-panel-heading">
             <div><span class="panel-kicker">Skema jawapan</span><h2>Keputusan setiap petunjuk</h2></div>

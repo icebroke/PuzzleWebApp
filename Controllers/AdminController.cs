@@ -161,36 +161,94 @@ public class AdminController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Index(string? q, string? status, int page = 1)
     {
-        var crossword = await CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, DateTime.UtcNow)
+        var crosswords = await _db.Crosswords
             .AsNoTracking()
-            .Include(item => item.Clues)
-            .FirstOrDefaultAsync();
-        crossword ??= await GetNewestCrosswordQuery()
-            .AsNoTracking()
-            .Include(item => item.Clues)
-            .FirstAsync();
+            .Include(crossword => crossword.Clues)
+            .Where(crossword => crossword.RoundNumber == 1 || crossword.RoundNumber == 2)
+            .ToListAsync();
+        var crosswordIds = crosswords.Select(crossword => crossword.Id).ToList();
+        var crosswordById = crosswords.ToDictionary(crossword => crossword.Id);
         var attempts = await _db.CrosswordAttempts
             .AsNoTracking()
-            .Where(attempt => attempt.CrosswordId == crossword.Id)
-            .OrderByDescending(attempt => attempt.SubmittedAtUtc)
-            .ThenBy(attempt => attempt.PlayerName)
+            .Where(attempt => crosswordIds.Contains(attempt.CrosswordId))
             .ToListAsync();
 
-        var summaries = attempts.Select(attempt =>
+        var summaries = attempts
+            .GroupBy(attempt => attempt.PlayerId.Trim().ToUpperInvariant())
+            .Select(playerAttempts =>
         {
-            var letters = DeserializeAnswers(attempt.AnswersJson);
-            return new AdminAttemptSummaryViewModel
+            var roundOne = playerAttempts
+                .Where(attempt => crosswordById[attempt.CrosswordId].RoundNumber == 1)
+                .OrderByDescending(attempt => attempt.StartedAtUtc)
+                .FirstOrDefault();
+            var roundTwo = playerAttempts
+                .Where(attempt => crosswordById[attempt.CrosswordId].RoundNumber == 2)
+                .OrderByDescending(attempt => attempt.StartedAtUtc)
+                .FirstOrDefault();
+            var roundOneSubmitted = roundOne?.SubmittedAtUtc.HasValue == true;
+            var roundTwoSubmitted = roundTwo?.SubmittedAtUtc.HasValue == true;
+            var roundOneClues = roundOne is null ? 0 : crosswordById[roundOne.CrosswordId].Clues.Count;
+            var roundTwoClues = roundTwo is null ? 0 : crosswordById[roundTwo.CrosswordId].Clues.Count;
+            var roundOneLetters = roundOne is null ? new Dictionary<string, string>() : DeserializeAnswers(roundOne.AnswersJson);
+            var roundTwoLetters = roundTwo is null ? new Dictionary<string, string>() : DeserializeAnswers(roundTwo.AnswersJson);
+            return new AdminPlayerSummaryViewModel
             {
-                Id = attempt.Id,
-                PlayerName = attempt.PlayerName,
-                PlayerId = attempt.PlayerId,
-                AnsweredCount = crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, letters)),
-                CorrectCount = crossword.Clues.Count(clue => CrosswordScoring.IsClueCorrect(clue, letters)),
-                TotalClues = crossword.Clues.Count,
-                SubmittedAtUtc = attempt.SubmittedAtUtc
+                PlayerName = roundTwo?.PlayerName ?? roundOne?.PlayerName ?? string.Empty,
+                PlayerId = roundTwo?.PlayerId ?? roundOne?.PlayerId ?? string.Empty,
+                RoundOneAttemptId = roundOne?.Id,
+                RoundOneCorrectCount = roundOneSubmitted
+                    ? crosswordById[roundOne!.CrosswordId].Clues.Count(clue => CrosswordScoring.IsClueCorrect(clue, roundOneLetters))
+                    : 0,
+                RoundOneTotalClues = roundOneClues,
+                RoundOneSubmitted = roundOneSubmitted,
+                RoundTwoAttemptId = roundTwo?.Id,
+                RoundTwoCorrectCount = roundTwoSubmitted
+                    ? crosswordById[roundTwo!.CrosswordId].Clues.Count(clue => CrosswordScoring.IsClueCorrect(clue, roundTwoLetters))
+                    : 0,
+                RoundTwoTotalClues = roundTwoClues,
+                RoundTwoSubmitted = roundTwoSubmitted,
+                RoundTwoCreativeSubmitted = roundTwo?.CreativeSubmittedAtUtc.HasValue == true,
+                CreativeJudgmentOrder = roundTwo?.CreativeJudgmentOrder
             };
         }).ToList();
-        var submitted = summaries.Where(attempt => attempt.SubmittedAtUtc.HasValue).ToList();
+        var standings = summaries.Where(player => player.IsComplete)
+            .OrderByDescending(player => player.TotalCorrectCount)
+            .ToList();
+        foreach (var tiedPlayers in standings.GroupBy(player => player.TotalCorrectCount).Where(group => group.Count() > 1))
+        {
+            foreach (var player in tiedPlayers)
+            {
+                player.IsTiedOnTotal = true;
+            }
+        }
+
+        var nextPlace = 1;
+        foreach (var tiedPlayers in standings.GroupBy(player => player.TotalCorrectCount))
+        {
+            var tieGroup = tiedPlayers.ToList();
+            var judgmentIsComplete = tieGroup.Count == 1
+                || tieGroup.All(player => player.CreativeJudgmentOrder.HasValue)
+                    && tieGroup.Select(player => player.CreativeJudgmentOrder!.Value).Order().SequenceEqual(Enumerable.Range(1, tieGroup.Count));
+            foreach (var player in tieGroup)
+            {
+                player.CreativeJudgmentOptions = Enumerable.Range(1, tieGroup.Count).ToList();
+            }
+            if (judgmentIsComplete)
+            {
+                var placedPlayers = tieGroup.Count == 1
+                    ? tieGroup
+                    : tieGroup.OrderBy(player => player.CreativeJudgmentOrder).ToList();
+                foreach (var player in placedPlayers)
+                {
+                    player.OverallPlace = nextPlace++;
+                }
+            }
+            else
+            {
+                nextPlace += tieGroup.Count;
+            }
+        }
+
         var searchTerm = q?.Trim() ?? string.Empty;
         var statusFilter = status is "submitted" or "in-progress" ? status : string.Empty;
         var filteredAttempts = summaries.AsEnumerable();
@@ -204,35 +262,67 @@ public class AdminController : Controller
 
         if (statusFilter == "submitted")
         {
-            filteredAttempts = filteredAttempts.Where(attempt => attempt.SubmittedAtUtc.HasValue);
+            filteredAttempts = filteredAttempts.Where(player => player.IsComplete);
         }
         else if (statusFilter == "in-progress")
         {
-            filteredAttempts = filteredAttempts.Where(attempt => !attempt.SubmittedAtUtc.HasValue);
+            filteredAttempts = filteredAttempts.Where(player => !player.IsComplete);
         }
 
-        var totalFilteredAttempts = filteredAttempts.Count();
+        var filteredList = filteredAttempts
+            .OrderBy(player => player.OverallPlace ?? int.MaxValue)
+            .ThenByDescending(player => player.TotalCorrectCount)
+            .ThenBy(player => player.PlayerName)
+            .ToList();
+        var totalFilteredAttempts = filteredList.Count;
         const int pageSize = 20;
         var totalPages = Math.Max(1, (totalFilteredAttempts + pageSize - 1) / pageSize);
         var currentPage = Math.Clamp(page, 1, totalPages);
 
         return View(new AdminOverviewViewModel
         {
-            CrosswordTitle = crossword.Title,
+            CrosswordTitle = "Keputusan Pusingan 1 & 2",
             TotalAttempts = summaries.Count,
-            SubmittedAttempts = submitted.Count,
-            TotalCorrectAnswers = submitted.Sum(attempt => attempt.CorrectCount),
-            TotalSubmittedAnswers = submitted.Sum(attempt => attempt.TotalClues),
+            SubmittedAttempts = summaries.Count(player => player.IsComplete),
+            TotalCorrectAnswers = summaries.Where(player => player.IsComplete).Sum(player => player.TotalCorrectCount),
+            TotalSubmittedAnswers = summaries.Where(player => player.IsComplete)
+                .Sum(player => player.RoundOneTotalClues + player.RoundTwoTotalClues),
             SearchTerm = searchTerm,
             StatusFilter = statusFilter,
             CurrentPage = currentPage,
             PageSize = pageSize,
             TotalFilteredAttempts = totalFilteredAttempts,
-            Attempts = filteredAttempts
+            Attempts = filteredList
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToList()
         });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetCreativeJudgmentPlace(int attemptId, int? creativeJudgmentOrder, string? q, string? status, int page = 1)
+    {
+        if (creativeJudgmentOrder < 1)
+        {
+            creativeJudgmentOrder = null;
+        }
+
+        var attempt = await _db.CrosswordAttempts
+            .Include(existing => existing.Crossword)
+            .SingleOrDefaultAsync(existing => existing.Id == attemptId);
+        if (attempt is null
+            || attempt.Crossword.RoundNumber != 2
+            || !attempt.SubmittedAtUtc.HasValue
+            || !attempt.CreativeSubmittedAtUtc.HasValue)
+        {
+            return BadRequest();
+        }
+
+        attempt.CreativeJudgmentOrder = creativeJudgmentOrder;
+        await _db.SaveChangesAsync();
+        TempData["AdminNotice"] = "Kedudukan penilaian kreativiti telah dikemas kini.";
+        return RedirectToAction(nameof(Index), new { q, status, page });
     }
 
     [HttpGet]
@@ -464,6 +554,7 @@ public class AdminController : Controller
             CrosswordTitle = attempt.Crossword.Title,
             PlayerName = attempt.PlayerName,
             PlayerId = attempt.PlayerId,
+            CreativeAnswer = attempt.CreativeAnswer,
             SubmittedAtUtc = attempt.SubmittedAtUtc,
             CorrectCount = results.Count(result => result.IsCorrect),
             AnsweredCount = results.Count(result => result.IsAnswered),

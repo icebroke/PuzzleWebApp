@@ -98,18 +98,28 @@ public class AdminOverviewViewModel
     public int TotalPages => Math.Max(1, (TotalFilteredAttempts + PageSize - 1) / PageSize);
     public int FirstItemNumber => TotalFilteredAttempts == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
     public int LastItemNumber => Math.Min(CurrentPage * PageSize, TotalFilteredAttempts);
-    public List<AdminAttemptSummaryViewModel> Attempts { get; set; } = [];
+    public List<AdminPlayerSummaryViewModel> Attempts { get; set; } = [];
 }
 
-public class AdminAttemptSummaryViewModel
+public class AdminPlayerSummaryViewModel
 {
-    public int Id { get; set; }
     public string PlayerName { get; set; } = string.Empty;
     public string PlayerId { get; set; } = string.Empty;
-    public int AnsweredCount { get; set; }
-    public int CorrectCount { get; set; }
-    public int TotalClues { get; set; }
-    public DateTime? SubmittedAtUtc { get; set; }
+    public int? RoundOneAttemptId { get; set; }
+    public int RoundOneCorrectCount { get; set; }
+    public int RoundOneTotalClues { get; set; }
+    public bool RoundOneSubmitted { get; set; }
+    public int? RoundTwoAttemptId { get; set; }
+    public int RoundTwoCorrectCount { get; set; }
+    public int RoundTwoTotalClues { get; set; }
+    public bool RoundTwoSubmitted { get; set; }
+    public bool RoundTwoCreativeSubmitted { get; set; }
+    public int? CreativeJudgmentOrder { get; set; }
+    public List<int> CreativeJudgmentOptions { get; set; } = [];
+    public int TotalCorrectCount => RoundOneCorrectCount + RoundTwoCorrectCount;
+    public bool IsComplete => RoundOneSubmitted && RoundTwoSubmitted;
+    public bool IsTiedOnTotal { get; set; }
+    public int? OverallPlace { get; set; }
 }
 
 public class AdminAttemptDetailViewModel
@@ -117,6 +127,7 @@ public class AdminAttemptDetailViewModel
     public string CrosswordTitle { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
     public string PlayerId { get; set; } = string.Empty;
+    public string CreativeAnswer { get; set; } = string.Empty;
     public DateTime? SubmittedAtUtc { get; set; }
     public int CorrectCount { get; set; }
     public int AnsweredCount { get; set; }

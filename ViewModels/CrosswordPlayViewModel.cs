@@ -7,6 +7,14 @@ public class CrosswordPlayViewModel
     public string CrosswordTitle { get; set; } = string.Empty;
     public string CrosswordDescription { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
+    public bool IsRoundTwo { get; set; }
+    public string CreativeQuestionTitle { get; set; } = string.Empty;
+    public string CreativeQuestionText { get; set; } = string.Empty;
+    public string CreativeAnswerGuidance { get; set; } = string.Empty;
+    public string CreativeAnswer { get; set; } = string.Empty;
+    public int CreativeRemainingSeconds { get; set; }
+    public bool IsCreativeSubmitted { get; set; }
+    public bool CreativeTimeExpired { get; set; }
     public int Rows { get; set; }
     public int Columns { get; set; }
     public int AnsweredCount { get; set; }
@@ -49,4 +57,9 @@ public class SaveCrosswordProgressRequest
 public class SubmitCrosswordRequest
 {
     public Dictionary<string, string> Letters { get; set; } = [];
+}
+
+public class SaveCreativeAnswerRequest
+{
+    public string Answer { get; set; } = string.Empty;
 }

@@ -108,10 +108,12 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
     db.Database.Migrate(); // Automatically applies any pending migrations to the database
     CrosswordScheduleSchema.EnsureUpToDate(db.Database);
+    RoundQuestionSchema.EnsureUpToDate(db.Database);
 
     AdminUserSeed.EnsureSeeded(
         db,
         scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>());
+    RoundQuestionSeed.EnsureSeeded(db);
     CrosswordSeed.EnsureSeeded(db);
 }
 

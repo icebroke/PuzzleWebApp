@@ -125,8 +125,19 @@ public class HomeController : Controller
         if (!attempt.SubmittedAtUtc.HasValue && DateTime.UtcNow >= deadline)
         {
             attempt.SubmittedAtUtc = deadline;
-            await _db.SaveChangesAsync();
         }
+
+        var now = DateTime.UtcNow;
+        if (attempt.Crossword.RoundNumber == 2 && attempt.SubmittedAtUtc.HasValue)
+        {
+            attempt.CreativeStartedAtUtc ??= attempt.SubmittedAtUtc.Value;
+            var creativePhaseDeadline = GetCreativeDeadline(attempt);
+            if (!attempt.CreativeSubmittedAtUtc.HasValue && now >= creativePhaseDeadline)
+            {
+                attempt.CreativeSubmittedAtUtc = creativePhaseDeadline;
+            }
+        }
+        await _db.SaveChangesAsync();
 
         var answers = JsonSerializer.Deserialize<Dictionary<string, string>>(attempt.AnswersJson)
             ?? throw new InvalidOperationException("The saved crossword progress is not valid JSON.");
@@ -170,12 +181,29 @@ public class HomeController : Controller
         var remainingSeconds = attempt.SubmittedAtUtc.HasValue
             ? 0
             : Math.Max(0, (int)Math.Ceiling((deadline - DateTime.UtcNow).TotalSeconds));
+        var creativeDeadline = attempt.CreativeStartedAtUtc.HasValue
+            ? GetCreativeDeadline(attempt)
+            : (DateTime?)null;
+        var creativeQuestion = attempt.Crossword.RoundNumber == 2
+            ? await _db.RoundQuestions.AsNoTracking().SingleOrDefaultAsync(question => question.RoundNumber == 2)
+            : null;
 
         return View(new CrosswordPlayViewModel
         {
             CrosswordTitle = attempt.Crossword.Title,
             CrosswordDescription = attempt.Crossword.Description,
             PlayerName = attempt.PlayerName,
+            IsRoundTwo = attempt.Crossword.RoundNumber == 2,
+            CreativeQuestionTitle = creativeQuestion?.Title ?? string.Empty,
+            CreativeQuestionText = creativeQuestion?.QuestionText ?? string.Empty,
+            CreativeAnswerGuidance = creativeQuestion?.AnswerGuidance ?? string.Empty,
+            CreativeAnswer = attempt.CreativeAnswer,
+            CreativeRemainingSeconds = creativeDeadline.HasValue && !attempt.CreativeSubmittedAtUtc.HasValue
+                ? Math.Max(0, (int)Math.Ceiling((creativeDeadline.Value - DateTime.UtcNow).TotalSeconds))
+                : 0,
+            IsCreativeSubmitted = attempt.CreativeSubmittedAtUtc.HasValue,
+            CreativeTimeExpired = attempt.CreativeSubmittedAtUtc.HasValue
+                && attempt.CreativeSubmittedAtUtc.Value >= creativeDeadline,
             Rows = attempt.Crossword.Rows,
             Columns = attempt.Crossword.Columns,
             AnsweredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, answers)),
@@ -294,7 +322,8 @@ public class HomeController : Controller
             {
                 submittedAtUtc = attempt.SubmittedAtUtc,
                 answeredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, savedAnswers)),
-                timedOut = attempt.SubmittedAtUtc.Value >= submittedDeadline
+                timedOut = attempt.SubmittedAtUtc.Value >= submittedDeadline,
+                creativePhaseStarted = attempt.Crossword.RoundNumber == 2
             });
         }
 
@@ -311,8 +340,15 @@ public class HomeController : Controller
             attempt.AnswersJson = JsonSerializer.Serialize(letters);
             attempt.LastSavedAtUtc = submittedAtUtc;
             attempt.SubmittedAtUtc = deadline;
+            StartCreativePhase(attempt, deadline);
             await _db.SaveChangesAsync();
-            return Json(new { submittedAtUtc = attempt.SubmittedAtUtc, answeredCount, timedOut = true });
+            return Json(new
+            {
+                submittedAtUtc = attempt.SubmittedAtUtc,
+                answeredCount,
+                timedOut = true,
+                creativePhaseStarted = attempt.Crossword.RoundNumber == 2
+            });
         }
 
         if (answeredCount == 0)
@@ -323,9 +359,85 @@ public class HomeController : Controller
         attempt.AnswersJson = JsonSerializer.Serialize(letters);
         attempt.LastSavedAtUtc = submittedAtUtc;
         attempt.SubmittedAtUtc = submittedAtUtc;
+        StartCreativePhase(attempt, submittedAtUtc);
         await _db.SaveChangesAsync();
 
-        return Json(new { submittedAtUtc = attempt.SubmittedAtUtc, answeredCount, timedOut = false });
+        return Json(new
+        {
+            submittedAtUtc = attempt.SubmittedAtUtc,
+            answeredCount,
+            timedOut = false,
+            creativePhaseStarted = attempt.Crossword.RoundNumber == 2
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveCreativeProgress([FromBody] SaveCreativeAnswerRequest? request)
+    {
+        var attempt = await GetCurrentAttemptAsync();
+        if (attempt is null)
+        {
+            return Unauthorized(new { message = "Sesi permainan anda telah tamat. Masukkan semula ID pemain untuk menyambung." });
+        }
+
+        if (attempt.Crossword.RoundNumber != 2 || !attempt.SubmittedAtUtc.HasValue)
+        {
+            return Conflict(new { message = "Soalan kreativiti hanya tersedia selepas teka silang kata pusingan 2 dihantar." });
+        }
+
+        if (attempt.CreativeSubmittedAtUtc.HasValue || DateTime.UtcNow >= GetCreativeDeadline(attempt))
+        {
+            return Conflict(new { message = "Masa menjawab soalan kreativiti telah tamat." });
+        }
+
+        if (request?.Answer is null || request.Answer.Length > 5000)
+        {
+            return BadRequest(new { message = "Jawapan mestilah tidak melebihi 5000 aksara." });
+        }
+
+        attempt.CreativeAnswer = request.Answer;
+        await _db.SaveChangesAsync();
+        return Json(new { saved = true });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitCreativeAnswer([FromBody] SaveCreativeAnswerRequest? request)
+    {
+        var attempt = await GetCurrentAttemptAsync();
+        if (attempt is null)
+        {
+            return Unauthorized(new { message = "Sesi permainan anda telah tamat. Masukkan semula ID pemain untuk menyambung." });
+        }
+
+        if (attempt.Crossword.RoundNumber != 2 || !attempt.SubmittedAtUtc.HasValue)
+        {
+            return Conflict(new { message = "Soalan kreativiti hanya tersedia selepas teka silang kata pusingan 2 dihantar." });
+        }
+
+        if (attempt.CreativeSubmittedAtUtc.HasValue)
+        {
+            return Json(new { submitted = true, timedOut = attempt.CreativeSubmittedAtUtc.Value >= GetCreativeDeadline(attempt) });
+        }
+
+        if (request?.Answer is null || request.Answer.Length > 5000)
+        {
+            return BadRequest(new { message = "Jawapan mestilah tidak melebihi 5000 aksara." });
+        }
+
+        var now = DateTime.UtcNow;
+        if (now < GetCreativeDeadline(attempt) && string.IsNullOrWhiteSpace(request.Answer))
+        {
+            return BadRequest(new { message = "Tulis pesanan anda sebelum menghantar." });
+        }
+
+        attempt.CreativeAnswer = request.Answer;
+        attempt.CreativeSubmittedAtUtc = now >= GetCreativeDeadline(attempt)
+            ? GetCreativeDeadline(attempt)
+            : now;
+        await _db.SaveChangesAsync();
+        return Json(new { submitted = true, timedOut = attempt.CreativeSubmittedAtUtc.Value >= GetCreativeDeadline(attempt) });
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -341,6 +453,36 @@ public class HomeController : Controller
 
     private static DateTime GetDeadline(CrosswordAttempt attempt) =>
         attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count);
+
+    private async Task<CrosswordAttempt?> GetCurrentAttemptAsync()
+    {
+        var attemptId = HttpContext.Session.GetInt32("CrosswordAttemptId");
+        if (attemptId is null)
+        {
+            return null;
+        }
+
+        var attempt = await _db.CrosswordAttempts
+            .Include(existing => existing.Crossword)
+            .SingleOrDefaultAsync(existing => existing.Id == attemptId.Value);
+        if (attempt?.Crossword.RoundNumber == 2 && attempt.SubmittedAtUtc.HasValue)
+        {
+            attempt.CreativeStartedAtUtc ??= attempt.SubmittedAtUtc.Value;
+        }
+
+        return attempt;
+    }
+
+    private static void StartCreativePhase(CrosswordAttempt attempt, DateTime startedAtUtc)
+    {
+        if (attempt.Crossword.RoundNumber == 2)
+        {
+            attempt.CreativeStartedAtUtc ??= startedAtUtc;
+        }
+    }
+
+    private static DateTime GetCreativeDeadline(CrosswordAttempt attempt) =>
+        (attempt.CreativeStartedAtUtc ?? attempt.SubmittedAtUtc ?? attempt.StartedAtUtc).AddMinutes(10);
 
     private static bool TryNormalizeAnswers(
         Crossword crossword,

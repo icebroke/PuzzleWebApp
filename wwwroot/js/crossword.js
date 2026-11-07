@@ -16,6 +16,11 @@
   const submissionFeedback = root.querySelector("#submission-feedback");
   const puzzleTimer = root.querySelector("#puzzle-timer");
   const remainingTime = root.querySelector("#remaining-time");
+  const creativeRoot = root.querySelector("#creative-question");
+  const creativeAnswer = root.querySelector("#creative-answer");
+  const creativeSubmitButton = root.querySelector("#submit-creative-answer");
+  const creativeSaveStatus = root.querySelector("#creative-save-status");
+  const creativeFeedback = root.querySelector("#creative-feedback");
   const token = root.querySelector(
     'input[name="__RequestVerificationToken"]',
   ).value;
@@ -28,6 +33,9 @@
   let saveTimer;
   let countdownTimer;
   let saveQueue = Promise.resolve();
+  let creativeSaveQueue = Promise.resolve();
+  let creativeSaveTimer;
+  let creativeCountdownTimer;
 
   const keyFor = (input, direction) =>
     input.dataset[`${direction.toLowerCase()}Key`];
@@ -198,6 +206,125 @@
     saveStatus.textContent = "Perubahan belum disimpan";
   }
 
+  function saveCreativeAnswer() {
+    const snapshot = creativeAnswer.value;
+    const operation = creativeSaveQueue.then(async () => {
+      creativeSaveStatus.textContent = "Menyimpan jawapan…";
+      const response = await fetch("/Home/SaveCreativeProgress", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          RequestVerificationToken: token,
+        },
+        body: JSON.stringify({ answer: snapshot }),
+      });
+      const result = await response.json();
+      if (response.status === 429) {
+        window.location.assign(result.redirectUrl || "/Home/RateLimitError");
+        throw new Error(result.message || "Terlalu banyak permintaan dibuat.");
+      }
+      if (!response.ok) {
+        throw new Error(result.message || "Jawapan tidak dapat disimpan.");
+      }
+      creativeSaveStatus.textContent = "Jawapan disimpan";
+    });
+    creativeSaveQueue = operation.catch((error) => {
+      creativeSaveStatus.textContent =
+        error.message || "Jawapan tidak dapat disimpan.";
+    });
+    return operation;
+  }
+
+  function scheduleCreativeSave() {
+    window.clearTimeout(creativeSaveTimer);
+    creativeSaveStatus.textContent = "Perubahan belum disimpan";
+    creativeSaveTimer = window.setTimeout(() => {
+      saveCreativeAnswer().catch(() => {});
+    }, 500);
+  }
+
+  async function submitCreativeAnswer(timedOut = false) {
+    if (!creativeAnswer || creativeRoot.dataset.submitting === "true") {
+      return;
+    }
+    creativeRoot.dataset.submitting = "true";
+    window.clearTimeout(creativeSaveTimer);
+    window.clearInterval(creativeCountdownTimer);
+    creativeAnswer.disabled = true;
+    if (creativeSubmitButton) {
+      window.AppUi.setButtonLoading(creativeSubmitButton, true);
+    }
+    creativeSaveStatus.textContent = timedOut
+      ? "Masa tamat. Menghantar jawapan…"
+      : "Menghantar jawapan…";
+    creativeFeedback.textContent = "";
+    try {
+      await creativeSaveQueue;
+      const response = await fetch("/Home/SubmitCreativeAnswer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          RequestVerificationToken: token,
+        },
+        body: JSON.stringify({ answer: creativeAnswer.value }),
+      });
+      const result = await response.json();
+      if (response.status === 429) {
+        window.location.assign(result.redirectUrl || "/Home/RateLimitError");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(result.message || "Jawapan tidak dapat dihantar.");
+      }
+      window.location.reload();
+    } catch (error) {
+      creativeRoot.dataset.submitting = "false";
+      creativeAnswer.disabled = false;
+      if (creativeSubmitButton) {
+        window.AppUi.setButtonLoading(creativeSubmitButton, false);
+      }
+      creativeSaveStatus.textContent = "Penghantaran tidak berjaya";
+      creativeFeedback.textContent =
+        error.message || "Jawapan tidak dapat dihantar.";
+      creativeFeedback.classList.add("has-error");
+      if (timedOut) {
+        window.setTimeout(() => submitCreativeAnswer(true), 5000);
+      }
+    }
+  }
+
+  if (creativeRoot && creativeAnswer) {
+    creativeAnswer.addEventListener("input", scheduleCreativeSave);
+    creativeSubmitButton?.addEventListener("click", () => {
+      if (
+        window.confirm(
+          "Hantar pesanan anda? Anda tidak boleh mengubahnya selepas dihantar.",
+        )
+      ) {
+        submitCreativeAnswer();
+      }
+    });
+
+    const creativeDeadline =
+      Date.now() + Number(creativeRoot.dataset.remainingSeconds) * 1000;
+    const updateCreativeCountdown = () => {
+      const secondsLeft = Math.max(
+        0,
+        Math.ceil((creativeDeadline - Date.now()) / 1000),
+      );
+      root.querySelector("#creative-remaining-time").textContent =
+        `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+      root
+        .querySelector("#creative-timer")
+        ?.classList.toggle("is-urgent", secondsLeft > 0 && secondsLeft <= 60);
+      if (secondsLeft === 0) {
+        submitCreativeAnswer(true);
+      }
+    };
+    updateCreativeCountdown();
+    creativeCountdownTimer = window.setInterval(updateCreativeCountdown, 250);
+  }
+
   function submitTimedOutPuzzle() {
     if (!puzzleTimer || puzzleTimer.dataset.running !== "true") {
       return;
@@ -244,11 +371,18 @@
   }
 
   if (puzzleTimer?.dataset.running === "true") {
-    const deadline = Date.now() + Number(puzzleTimer.dataset.remainingSeconds) * 1000;
+    const deadline =
+      Date.now() + Number(puzzleTimer.dataset.remainingSeconds) * 1000;
     const updateCountdown = () => {
-      const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const secondsLeft = Math.max(
+        0,
+        Math.ceil((deadline - Date.now()) / 1000),
+      );
       remainingTime.textContent = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
-      puzzleTimer.classList.toggle("is-urgent", secondsLeft > 0 && secondsLeft <= 60);
+      puzzleTimer.classList.toggle(
+        "is-urgent",
+        secondsLeft > 0 && secondsLeft <= 60,
+      );
       if (secondsLeft === 0) {
         submitTimedOutPuzzle();
       }
@@ -394,6 +528,11 @@
 
       if (!response.ok) {
         throw new Error(result.message || "Jawapan anda tidak dapat dihantar.");
+      }
+
+      if (result.creativePhaseStarted) {
+        window.location.reload();
+        return;
       }
 
       saveStatus.textContent = "Jawapan telah dihantar";
