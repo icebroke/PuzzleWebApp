@@ -110,9 +110,20 @@ Aplikasi ini menggunakan SQLite dengan rentetan sambungan berikut dalam `appsett
 Pentadbir lalai disemai ketika aplikasi bermula jika belum ada akaun pentadbir:
 
 - Nama pengguna: `admin`
-- Kata laluan sementara: `ChangeMe123!`
+- Kata laluan sementara: `ChangeMe123`
 
 Akaun ini diwajibkan menukar kata laluan pada log masuk pertama sebelum halaman pentadbiran boleh digunakan. Tukar nilai sementara dalam `AdminUserSeed` sebelum deployment. Kata laluan disimpan sebagai hash menggunakan ASP.NET Core Identity. SQLite tidak mempunyai akaun pengguna/kata laluan terbina dalam; akses pangkalan data dikawal oleh aplikasi dan kebenaran fail sistem operasi. Simpan `puzzle.db` di luar direktori web awam, hadkan akses fail kepada akaun aplikasi sahaja, dan lindungi sandaran pada tahap yang sama.
+
+## Deployment Railway
+
+Repositori ini menyertakan `Dockerfile` dan `railway.toml`; Railway akan membina imej .NET 10 melalui Docker dan menggunakan pemeriksaan kesihatan pada `/`. Sebelum deployment awam:
+
+1. Tukar `DefaultPassword` dalam `Data/AdminUserSeed.cs` daripada kata laluan sementara lalai, kemudian commit perubahan itu.
+2. Cipta volume untuk servis Railway dengan mount path `/data` sebelum aplikasi mula berjalan. SQLite disimpan di `/data/puzzle.db` dan akan hilang jika direktori ini tidak dipasang pada volume.
+3. Hubungkan repositori sebagai servis Railway dan deploy. Railway menetapkan `PORT` secara automatik; kontena akan mendengar pada port tersebut.
+4. Dalam tetapan servis, tetapkan `ConnectionStrings__DefaultConnection` kepada `Data Source=/data/puzzle.db` jika mahu mengurus rentetan sambungan di Railway. Imej sudah menggunakan nilai yang sama secara lalai.
+
+Pengesahan HTTPS ditamatkan oleh proksi Railway. Tetapan imej menghidupkan persekitaran `Production`. Konfigurasi aplikasi ini tidak menetapkan pelan atau had bil; pemilihan percubaan percuma dan pemantauan penggunaan dibuat dalam akaun Railway.
 
 ## Pentadbiran
 

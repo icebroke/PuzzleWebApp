@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+artifacts/
+.git/
+.env
+.env.*
+*.db
+*.db-*
