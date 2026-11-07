@@ -27,11 +27,7 @@ public class HomeController : Controller
             .FirstOrDefaultAsync();
         if (crossword is null)
         {
-            return View(new CrosswordJoinViewModel
-            {
-                IsPuzzleAvailable = false,
-                AvailabilityMessage = "Teka silang kata belum dibuka. Sila kembali dalam tempoh yang ditetapkan."
-            });
+            return View(await BuildUnavailableJoinViewModelAsync(DateTime.UtcNow));
         }
 
         var model = new CrosswordJoinViewModel();
@@ -63,9 +59,7 @@ public class HomeController : Controller
             .FirstOrDefaultAsync();
         if (currentCrossword is null)
         {
-            model.IsPuzzleAvailable = false;
-            model.AvailabilityMessage = "Teka silang kata belum dibuka. Sila kembali dalam tempoh yang ditetapkan.";
-            return View("Index", model);
+            return View("Index", await BuildUnavailableJoinViewModelAsync(DateTime.UtcNow));
         }
 
         PopulateJoinPuzzleDetails(model, currentCrossword);
@@ -453,6 +447,34 @@ public class HomeController : Controller
 
     private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() =>
         CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, DateTime.UtcNow);
+
+    private async Task<CrosswordJoinViewModel> BuildUnavailableJoinViewModelAsync(DateTime nowUtc)
+    {
+        var model = new CrosswordJoinViewModel
+        {
+            IsPuzzleAvailable = false,
+            AvailabilityMessage = "Teka silang kata belum dibuka."
+        };
+        var upcomingCrossword = await _db.Crosswords
+            .Include(puzzle => puzzle.Clues)
+            .AsNoTracking()
+            .Where(puzzle => !puzzle.ManualActivation
+                && puzzle.ScheduledStartAtUtc.HasValue
+                && puzzle.ScheduledStartAtUtc.Value > nowUtc
+                && puzzle.ScheduledEndAtUtc.HasValue
+                && puzzle.ScheduledEndAtUtc.Value > nowUtc)
+            .OrderBy(puzzle => puzzle.ScheduledStartAtUtc)
+            .ThenByDescending(puzzle => puzzle.CreatedAtUtc)
+            .ThenByDescending(puzzle => puzzle.Id)
+            .FirstOrDefaultAsync();
+
+        if (upcomingCrossword is not null)
+        {
+            PopulateJoinPuzzleDetails(model, upcomingCrossword);
+        }
+
+        return model;
+    }
 
     private static void PopulateJoinPuzzleDetails(CrosswordJoinViewModel model, Crossword crossword)
     {

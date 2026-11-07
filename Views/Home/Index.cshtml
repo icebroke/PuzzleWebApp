@@ -22,6 +22,13 @@
         @if (!Model.IsPuzzleAvailable)
         {
             <p class="admin-notice" role="status">@Model.AvailabilityMessage</p>
+            @if (Model.ScheduledStartAtMalaysia.HasValue && Model.ScheduledEndAtMalaysia.HasValue)
+            {
+                <div class="join-note" role="note">
+                    <strong>Jadual pusingan @Model.RoundNumber.</strong>
+                    <span>Permainan dibuka dari <b>@Model.ScheduledStartAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b> hingga <b>@Model.ScheduledEndAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b>.</span>
+                </div>
+            }
         }
         else
         {
