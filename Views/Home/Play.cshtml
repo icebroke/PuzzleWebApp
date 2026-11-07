@@ -2,8 +2,7 @@
 @using PuzzleWebApp.Models
 @{
     ViewData["Title"] = Model.CrosswordTitle;
-    var acrossClues = Model.Clues.Where(clue => clue.Direction == CrosswordDirection.Across).ToList();
-    var downClues = Model.Clues.Where(clue => clue.Direction == CrosswordDirection.Down).ToList();
+    var orderedClues = Model.Clues.OrderBy(clue => clue.Number).ToList();
 }
 
 <main id="crossword-game" class="game-page" data-rows="@Model.Rows" data-columns="@Model.Columns" data-submitted="@Model.IsSubmitted.ToString().ToLowerInvariant()">
@@ -37,7 +36,12 @@
         <div id="submission-banner" class="completion-banner d-none" role="status"></div>
     }
 
-    <section class="game-layout" aria-label="Crossword game">
+    <div class="game-view-switch" aria-label="Paparan permainan">
+        <button type="button" class="is-active" data-game-view="grid" aria-pressed="true">Grid</button>
+        <button type="button" data-game-view="clues" aria-pressed="false">Petunjuk <span>@Model.Clues.Count</span></button>
+    </div>
+
+    <section class="game-layout" data-active-view="grid" aria-label="Crossword game">
         <div class="board-panel">
             <div class="board-toolbar">
                 <div>
@@ -57,6 +61,12 @@
                     <span class="direction-icon" aria-hidden="true">↔</span>
                     <span id="direction-label">Melintang</span>
                 </button>
+            </div>
+
+            <div class="active-clue" aria-live="polite">
+                <span>Petunjuk dipilih</span>
+                <strong id="active-clue-text">Pilih petunjuk untuk bermula</strong>
+                <span id="active-clue-meta"></span>
             </div>
 
             <div class="crossword-board-wrap">
@@ -125,33 +135,26 @@
                 <div><span class="panel-kicker">Petunjuk</span><h2>Cari jawapannya</h2></div>
                 <span class="clue-count">@Model.Clues.Count</span>
             </div>
-            @foreach (var (direction, clues) in new[] { (CrosswordDirection.Across, acrossClues), (CrosswordDirection.Down, downClues) })
-            {
-                var heading = direction == CrosswordDirection.Across ? "Melintang" : "Menegak";
-                <section class="clue-group" aria-labelledby="@heading.ToLowerInvariant()-heading">
-                    <h3 id="@heading.ToLowerInvariant()-heading" class="clue-group-title">@heading</h3>
-                    <ol class="clue-list">
-                        @foreach (var clue in clues)
-                        {
-                            <li>
-                                <button type="button"
-                                        class="clue-button"
-                                        data-clue-key="@clue.Key"
-                                        data-direction="@clue.Direction"
-                                        data-start-row="@clue.StartRow"
-                                        data-start-column="@clue.StartColumn"
-                                        data-length="@clue.Length"
-                                        aria-pressed="false">
-                                    <span class="clue-number">@clue.Number</span>
-                                    <span class="clue-text">@clue.Text</span>
-                                    <span class="clue-length">@clue.Length huruf</span>
-                                    <span class="clue-check" aria-hidden="true">✓</span>
-                                </button>
-                            </li>
-                        }
-                    </ol>
-                </section>
-            }
+            <ol class="clue-list">
+                @foreach (var clue in orderedClues)
+                {
+                    <li>
+                        <button type="button"
+                                class="clue-button"
+                                data-clue-key="@clue.Key"
+                                data-direction="@clue.Direction"
+                                data-start-row="@clue.StartRow"
+                                data-start-column="@clue.StartColumn"
+                                data-length="@clue.Length"
+                                aria-pressed="false">
+                            <span class="clue-number">@clue.Number</span>
+                            <span class="clue-text">@clue.Text</span>
+                            <span class="clue-length">@clue.Length huruf</span>
+                            <span class="clue-check" aria-hidden="true">✓</span>
+                        </button>
+                    </li>
+                }
+            </ol>
         </aside>
     </section>
 

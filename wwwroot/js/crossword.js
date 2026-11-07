@@ -8,6 +8,10 @@
   const clueButtons = Array.from(root.querySelectorAll(".clue-button"));
   const directionToggle = root.querySelector("#direction-toggle");
   const directionLabel = root.querySelector("#direction-label");
+  const gameLayout = root.querySelector(".game-layout");
+  const gameViewButtons = Array.from(root.querySelectorAll("[data-game-view]"));
+  const activeClueText = root.querySelector("#active-clue-text");
+  const activeClueMeta = root.querySelector("#active-clue-meta");
   const saveStatus = root.querySelector("#save-status");
   const progressLabel = root.querySelector("#progress-label");
   const submitButton = root.querySelector("#submit-puzzle");
@@ -42,6 +46,15 @@
   const directionName = (direction) =>
     direction === "Across" ? "Melintang" : "Menegak";
 
+  function setGameView(view) {
+    gameLayout.dataset.activeView = view;
+    gameViewButtons.forEach((button) => {
+      const selected = button.dataset.gameView === view;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+
   function selectClue(key) {
     const clue = cluesByKey.get(key);
     if (!clue) {
@@ -50,6 +63,8 @@
 
     activeKey = key;
     activeDirection = clue.dataset.direction;
+    activeClueText.textContent = clue.querySelector(".clue-text").textContent;
+    activeClueMeta.textContent = `${directionName(activeDirection)} · ${clue.querySelector(".clue-length").textContent}`;
     directionLabel.textContent = directionName(activeDirection);
     directionToggle.setAttribute(
       "aria-label",
@@ -426,15 +441,32 @@
   clueButtons.forEach((button) => {
     button.addEventListener("click", () => {
       selectClue(button.dataset.clueKey);
+      setGameView("grid");
       const row = button.dataset.startRow;
       const column = button.dataset.startColumn;
-      root
-        .querySelector(
-          `.crossword-cell[data-row="${row}"][data-column="${column}"]`,
-        )
-        ?.focus();
+      const targetCell = root.querySelector(
+        `.crossword-cell[data-row="${row}"][data-column="${column}"]`,
+      );
+      targetCell?.focus({ preventScroll: true });
+      targetCell?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "center",
+        inline: "nearest",
+      });
     });
   });
+
+  gameViewButtons.forEach((button) => {
+    button.addEventListener("click", () =>
+      setGameView(button.dataset.gameView),
+    );
+  });
+
+  if (clueButtons[0]) {
+    selectClue(clueButtons[0].dataset.clueKey);
+  }
 
   directionToggle.addEventListener("click", () => {
     const nextDirection = activeDirection === "Across" ? "Down" : "Across";

@@ -47,6 +47,21 @@
         }
 
         <div class="join-support">
+            @if (Model.IsPuzzleAvailable)
+            {
+                <div class="join-note" role="note">
+                    <strong>Tempoh permainan · Pusingan @Model.RoundNumber</strong>
+                    @if (Model.ScheduledStartAtMalaysia.HasValue && Model.ScheduledEndAtMalaysia.HasValue)
+                    {
+                        <span>Permainan dibuka dari <b>@Model.ScheduledStartAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b> hingga <b>@Model.ScheduledEndAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b>. Sila lengkapkan permainan sebelum waktu tutup.</span>
+                    }
+                    <span>Had masa teka silang kata: <b>@Model.TimeLimitMinutes minit</b>.</span>
+                    @if (Model.RoundNumber == 2)
+                    {
+                        <span>Soalan kreativiti mempunyai had masa tambahan 10 minit selepas teka silang kata dihantar.</span>
+                    }
+                </div>
+            }
             <div class="join-note">
                 <strong>Nota</strong>
                 <span>Anda boleh menyambung kuiz dengan log masuk semula menggunakan MyKad yang sama.</span>

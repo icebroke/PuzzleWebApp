@@ -21,7 +21,10 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var crossword = await GetLiveCrosswordQuery().AsNoTracking().FirstOrDefaultAsync();
+        var crossword = await GetLiveCrosswordQuery()
+            .Include(puzzle => puzzle.Clues)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
         if (crossword is null)
         {
             return View(new CrosswordJoinViewModel
@@ -31,11 +34,9 @@ public class HomeController : Controller
             });
         }
 
-        return View(new CrosswordJoinViewModel
-        {
-            CrosswordTitle = crossword.Title,
-            CrosswordDescription = crossword.Description
-        });
+        var model = new CrosswordJoinViewModel();
+        PopulateJoinPuzzleDetails(model, crossword);
+        return View(model);
     }
 
     [HttpGet]
@@ -57,7 +58,9 @@ public class HomeController : Controller
         model.PlayerName = model.PlayerName?.Trim() ?? string.Empty;
         model.PlayerId = model.PlayerId?.Trim() ?? string.Empty;
 
-        var currentCrossword = await GetLiveCrosswordQuery().FirstOrDefaultAsync();
+        var currentCrossword = await GetLiveCrosswordQuery()
+            .Include(puzzle => puzzle.Clues)
+            .FirstOrDefaultAsync();
         if (currentCrossword is null)
         {
             model.IsPuzzleAvailable = false;
@@ -65,10 +68,10 @@ public class HomeController : Controller
             return View("Index", model);
         }
 
+        PopulateJoinPuzzleDetails(model, currentCrossword);
+
         if (!ModelState.IsValid)
         {
-            model.CrosswordTitle = currentCrossword.Title;
-            model.CrosswordDescription = currentCrossword.Description;
             return View("Index", model);
         }
 
@@ -450,6 +453,16 @@ public class HomeController : Controller
 
     private IOrderedQueryable<Crossword> GetLiveCrosswordQuery() =>
         CrosswordAvailability.GetAvailablePuzzles(_db.Crosswords, DateTime.UtcNow);
+
+    private static void PopulateJoinPuzzleDetails(CrosswordJoinViewModel model, Crossword crossword)
+    {
+        model.CrosswordTitle = crossword.Title;
+        model.CrosswordDescription = crossword.Description;
+        model.RoundNumber = crossword.RoundNumber;
+        model.TimeLimitMinutes = crossword.Clues.Count;
+        model.ScheduledStartAtMalaysia = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledStartAtUtc);
+        model.ScheduledEndAtMalaysia = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledEndAtUtc);
+    }
 
     private static DateTime GetDeadline(CrosswordAttempt attempt) =>
         attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count);

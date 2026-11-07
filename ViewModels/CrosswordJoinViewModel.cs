@@ -6,6 +6,10 @@ public class CrosswordJoinViewModel
 {
     public string CrosswordTitle { get; set; } = string.Empty;
     public string CrosswordDescription { get; set; } = string.Empty;
+    public int RoundNumber { get; set; }
+    public int TimeLimitMinutes { get; set; }
+    public DateTime? ScheduledStartAtMalaysia { get; set; }
+    public DateTime? ScheduledEndAtMalaysia { get; set; }
     public bool IsPuzzleAvailable { get; set; } = true;
     public string AvailabilityMessage { get; set; } = string.Empty;
 
