@@ -1,0 +1,26 @@
+@model PuzzleWebApp.ViewModels.AdminPuzzleSummaryViewModel
+@{
+    ViewData["Title"] = "Tetapkan semula permainan";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Puzzles" class="admin-back-link">← Semua teka silang kata</a>
+            <p class="eyebrow admin-detail-eyebrow">Pengesahan</p>
+            <h1>Tetapkan semula permainan?</h1>
+            <p class="admin-subtitle">Teka silang kata dan jadualnya akan dikekalkan.</p>
+        </div>
+    </header>
+    <section class="admin-results-panel puzzle-delete-panel">
+        <span class="panel-kicker">@Model.Rows × @Model.Columns · @Model.ClueCount petunjuk</span>
+        <h2>@Model.Title</h2>
+        <p>@Model.Description</p>
+        <p class="puzzle-delete-warning">Semua @Model.AttemptCount rekod percubaan, jawapan dan keputusan untuk teka silang kata ini akan dipadam. Pemain boleh bermula semula.</p>
+        <form asp-action="ResetPuzzleGameConfirmed" asp-route-id="@Model.Id" method="post" class="puzzle-delete-actions">
+            @Html.AntiForgeryToken()
+            <a asp-action="Puzzles" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-danger">Tetapkan semula permainan</button>
+        </form>
+    </section>
+</main>

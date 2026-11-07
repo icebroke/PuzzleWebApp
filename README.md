@@ -18,10 +18,11 @@ Pengguna boleh memasukkan nama dan ID pemain, menyimpan kemajuan jawapan, mengha
 
 - Permainan teka silang kata berasaskan grid
 - Log masuk pemain dengan nama dan ID unik
-- Simpan kemajuan permainan secara automatik dalam sesi
+- Simpan kemajuan permainan secara automatik dalam pangkalan data
 - Penghantaran jawapan dengan pengesahan anti-forgery
-- Papan pentadbiran untuk melihat statistik peserta
-- Pemeriksaan jawapan dan analisis jumlah jawapan yang betul
+- Papan pentadbiran dengan ringkasan keputusan mengikut pemain dan pusingan
+- Pemeriksaan jawapan, penilaian seri, dan analisis jumlah jawapan yang betul
+- Pengurusan teka silang kata, termasuk jadual, pengaktifan manual dan tetapan semula permainan
 - Penyederhanaan trafik dengan rate limiting
 - Keselamatan tambahan melalui CSP (Content Security Policy)
 - Pangkalan data SQLite yang dicipta dan disemai secara automatik
@@ -114,11 +115,22 @@ Pentadbir lalai disemai ketika aplikasi bermula jika belum ada akaun pentadbir:
 
 Akaun ini diwajibkan menukar kata laluan pada log masuk pertama sebelum halaman pentadbiran boleh digunakan. Tukar nilai sementara dalam `AdminUserSeed` sebelum deployment. Kata laluan disimpan sebagai hash menggunakan ASP.NET Core Identity. SQLite tidak mempunyai akaun pengguna/kata laluan terbina dalam; akses pangkalan data dikawal oleh aplikasi dan kebenaran fail sistem operasi. Simpan `puzzle.db` di luar direktori web awam, hadkan akses fail kepada akaun aplikasi sahaja, dan lindungi sandaran pada tahap yang sama.
 
+## Jalankan dengan Docker
+
+Dockerfile menggunakan binaan berperingkat .NET 10. Bekas mendengar pada port `8080` secara lalai dan menyimpan pangkalan data SQLite di `/data/puzzle.db`. Gunakan volume bernama supaya data kekal selepas bekas dihentikan atau diganti:
+
+```bash
+docker build -t puzzlewebapp .
+docker run --rm -p 8080:8080 -v puzzlewebapp-data:/data puzzlewebapp
+```
+
+Buka http://localhost:8080. Rentetan sambungan lalai dalam imej sudah menunjuk ke `/data/puzzle.db`.
+
 ## Deployment Railway
 
 Repositori ini menyertakan `Dockerfile` dan `railway.toml`; Railway akan membina imej .NET 10 melalui Docker dan menggunakan pemeriksaan kesihatan pada `/`. Sebelum deployment awam:
 
-1. Tukar `DefaultPassword` dalam `Data/AdminUserSeed.cs` daripada kata laluan sementara lalai, kemudian commit perubahan itu.
+1. Sebelum deployment awam, tukar `DefaultPassword` dalam `Data/AdminUserSeed.cs` kepada nilai unik dan jangan dedahkan nilai itu dalam repositori atau imej awam. Seeder semasa membaca nilai daripada pemalar kod, bukan pemboleh ubah persekitaran; pentadbir masih diwajibkan menukar kata laluan selepas log masuk pertama.
 2. Cipta volume untuk servis Railway dengan mount path `/data` sebelum aplikasi mula berjalan. SQLite disimpan di `/data/puzzle.db` dan akan hilang jika direktori ini tidak dipasang pada volume.
 3. Hubungkan repositori sebagai servis Railway dan deploy. Railway menetapkan `PORT` secara automatik; kontena akan mendengar pada port tersebut.
 4. Dalam tetapan servis, tetapkan `ConnectionStrings__DefaultConnection` kepada `Data Source=/data/puzzle.db` jika mahu mengurus rentetan sambungan di Railway. Imej sudah menggunakan nilai yang sama secara lalai.
@@ -135,10 +147,11 @@ Akses halaman admin biasanya melalui URL berikut:
 
 Selepas log masuk, pentadbir boleh:
 
-- melihat senarai semua cubaan pemain
-- menilai jumlah jawapan yang dijawab dan betul
-- melihat butiran setiap cubaan pemain
+- melihat ringkasan keputusan setiap pemain untuk kedua-dua pusingan
+- menapis senarai peserta dan melihat butiran jawapan setiap cubaan
+- menetapkan kedudukan kreativiti apabila jumlah markah seri
 - memantau prestasi keseluruhan teka silang kata
+- menetapkan semula permainan bagi satu teka silang kata selepas pengesahan; rekod percubaan, jawapan dan keputusan untuk teka silang kata itu dipadam, tetapi kandungan serta jadualnya dikekalkan
 - menetapkan masa mula dan tamat permainan dalam waktu Malaysia
 - mengaktifkan atau menyahaktifkan permainan secara manual
 
@@ -171,9 +184,5 @@ In progres.
 
 ## TODO
 
-- [x] Fix the answer input to follow the direction.
-- [x] Change the title to 'Kuiz Silang Kata Bulan Integriti MDHT 2026' in DB.
-- [x] Fix UI for mobile view.
-- [x] Fix UX behaviour and also interaction.
-- [] 1st round 8 November 2026, 09:00 - 12 November 2026, 17:00
-- [] 2nd round 15 November 2026, 09:00 - 19 November 2026, 17:00
+- [x] 1st round 8 November 2026, 09:00 - 12 November 2026, 17:00
+- [x] 2nd round 15 November 2026, 09:00 - 19 November 2026, 17:00

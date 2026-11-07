@@ -474,6 +474,41 @@ public class AdminController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> ResetPuzzleGame(int id)
+    {
+        var crossword = await _db.Crosswords
+            .AsNoTracking()
+            .Select(item => new AdminPuzzleSummaryViewModel
+            {
+                Id = item.Id,
+                Title = item.Title,
+                Description = item.Description,
+                Rows = item.Rows,
+                Columns = item.Columns,
+                ClueCount = item.Clues.Count,
+                AttemptCount = item.Attempts.Count
+            })
+            .SingleOrDefaultAsync(item => item.Id == id);
+        return crossword is null ? NotFound() : View(crossword);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPuzzleGameConfirmed(int id)
+    {
+        if (!await _db.Crosswords.AnyAsync(item => item.Id == id))
+        {
+            return NotFound();
+        }
+
+        var deletedAttempts = await _db.CrosswordAttempts
+            .Where(attempt => attempt.CrosswordId == id)
+            .ExecuteDeleteAsync();
+        TempData["AdminNotice"] = $"Permainan telah ditetapkan semula. {deletedAttempts} rekod percubaan pemain dipadam.";
+        return RedirectToAction(nameof(Puzzles));
+    }
+
+    [HttpGet]
     public async Task<IActionResult> DeletePuzzle(int id)
     {
         if (await _db.Crosswords.CountAsync() <= 1)

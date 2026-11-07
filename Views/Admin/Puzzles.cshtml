@@ -67,6 +67,10 @@
                                     @(puzzle.ManualActivation ? "Matikan manual" : "Aktifkan sekarang")
                                 </button>
                             </form>
+                            @if (puzzle.AttemptCount > 0)
+                            {
+                                <a asp-action="ResetPuzzleGame" asp-route-id="@puzzle.Id" class="btn btn-outline-secondary">Tetapkan semula permainan</a>
+                            }
                             <a asp-action="EditPuzzle" asp-route-id="@puzzle.Id" class="btn btn-outline-secondary">Edit</a>
                             @if (Model.Puzzles.Count > 1)
                             {
