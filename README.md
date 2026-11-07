@@ -111,7 +111,7 @@ Aplikasi ini menggunakan SQLite dengan rentetan sambungan berikut dalam `appsett
 Pentadbir lalai disemai ketika aplikasi bermula jika belum ada akaun pentadbir:
 
 - Nama pengguna: `admin`
-- Kata laluan sementara: `ChangeMe123`
+- Kata laluan sementara: `ChangeMe123!`
 
 Akaun ini diwajibkan menukar kata laluan pada log masuk pertama sebelum halaman pentadbiran boleh digunakan. Tukar nilai sementara dalam `AdminUserSeed` sebelum deployment. Kata laluan disimpan sebagai hash menggunakan ASP.NET Core Identity. SQLite tidak mempunyai akaun pengguna/kata laluan terbina dalam; akses pangkalan data dikawal oleh aplikasi dan kebenaran fail sistem operasi. Simpan `puzzle.db` di luar direktori web awam, hadkan akses fail kepada akaun aplikasi sahaja, dan lindungi sandaran pada tahap yang sama.
 

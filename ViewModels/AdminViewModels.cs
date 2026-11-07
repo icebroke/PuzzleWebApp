@@ -10,7 +10,7 @@ public class AdminLoginViewModel
     public string Username { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(200, MinimumLength = 12)]
+    [StringLength(200)]
     public string Password { get; set; } = string.Empty;
     public string? ErrorMessage { get; set; }
 }

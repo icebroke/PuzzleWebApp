@@ -8,7 +8,7 @@ namespace PuzzleWebApp.Data;
 public static class AdminUserSeed
 {
     public const string DefaultUsername = "admin";
-    public const string DefaultPassword = "ChangeMe123";
+    public const string DefaultPassword = "ChangeMe123!";
 
     public static void EnsureSeeded(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher)
     {
