@@ -7,6 +7,7 @@
   const inputs = Array.from(root.querySelectorAll(".crossword-cell"));
   const clueButtons = Array.from(root.querySelectorAll(".clue-button"));
   const directionToggle = root.querySelector("#direction-toggle");
+  const directionIcon = root.querySelector("#direction-icon");
   const directionLabel = root.querySelector("#direction-label");
   const gameLayout = root.querySelector(".game-layout");
   const gameViewButtons = Array.from(root.querySelectorAll("[data-game-view]"));
@@ -65,6 +66,7 @@
     activeDirection = clue.dataset.direction;
     activeClueText.textContent = clue.querySelector(".clue-text").textContent;
     activeClueMeta.textContent = `${directionName(activeDirection)} · ${clue.querySelector(".clue-length").textContent}`;
+    directionIcon.textContent = activeDirection === "Across" ? "↔" : "↕";
     directionLabel.textContent = directionName(activeDirection);
     directionToggle.setAttribute(
       "aria-label",

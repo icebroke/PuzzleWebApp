@@ -12,6 +12,8 @@ namespace PuzzleWebApp.Controllers;
 
 public class HomeController : Controller
 {
+    private const int CrosswordMinutesPerClue = 2;
+
     private readonly AppDbContext _db;
 
     public HomeController(AppDbContext db)
@@ -204,7 +206,7 @@ public class HomeController : Controller
             Rows = attempt.Crossword.Rows,
             Columns = attempt.Crossword.Columns,
             AnsweredCount = attempt.Crossword.Clues.Count(clue => CrosswordScoring.IsClueAnswered(clue, answers)),
-            TimeLimitMinutes = attempt.Crossword.Clues.Count,
+            TimeLimitMinutes = attempt.Crossword.Clues.Count * CrosswordMinutesPerClue,
             RemainingSeconds = remainingSeconds,
             IsSubmitted = attempt.SubmittedAtUtc.HasValue,
             TimeExpired = timeExpired,
@@ -481,13 +483,13 @@ public class HomeController : Controller
         model.CrosswordTitle = crossword.Title;
         model.CrosswordDescription = crossword.Description;
         model.RoundNumber = crossword.RoundNumber;
-        model.TimeLimitMinutes = crossword.Clues.Count;
+        model.TimeLimitMinutes = crossword.Clues.Count * CrosswordMinutesPerClue;
         model.ScheduledStartAtMalaysia = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledStartAtUtc);
         model.ScheduledEndAtMalaysia = CrosswordAvailability.ToMalaysiaTime(crossword.ScheduledEndAtUtc);
     }
 
     private static DateTime GetDeadline(CrosswordAttempt attempt) =>
-        attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count);
+        attempt.StartedAtUtc.AddMinutes(attempt.Crossword.Clues.Count * CrosswordMinutesPerClue);
 
     private async Task<CrosswordAttempt?> GetCurrentAttemptAsync()
     {
