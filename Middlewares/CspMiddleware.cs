@@ -19,11 +19,10 @@ public class CspMiddleware
         // Store the nonce in HttpContext.Items so Views and Partials can read it
         context.Items["ScriptNonce"] = nonce;
 
-        // Define your CSP rules. 
-        // Note: 'unsafe-inline' for style-src because Bootstrap/MVC themes heavily rely on it.
+        // Define your CSP rules. Inline styles are enabled for server-rendered puzzle layout values.
         string cspHeader = $"default-src 'self'; " +
                             $"script-src 'self' 'nonce-{nonce}'; " +
-                            $"style-src 'self'; " +
+                    $"style-src 'self' 'unsafe-inline'; " +
                             $"img-src 'self' data: https:; " +
                             $"font-src 'self' data:; " +
 #if DEBUG

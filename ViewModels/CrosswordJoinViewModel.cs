@@ -20,6 +20,6 @@ public class CrosswordJoinViewModel
 
     [Required(ErrorMessage = "Sila masukkan MyKad anda.")]
     [StringLength(12, MinimumLength = 12, ErrorMessage = "MyKad mesti 12 digit.")]
-    [Display(Name = "ID pemain")]
+    [Display(Name = "MyKad pemain")]
     public string PlayerId { get; set; } = string.Empty;
 }

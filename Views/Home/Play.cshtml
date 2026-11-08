@@ -41,6 +41,13 @@
         <button type="button" data-game-view="clues" aria-pressed="false">Petunjuk <span>@Model.Clues.Count</span></button>
     </div>
 
+    <style>
+        #crossword-game .crossword-grid {
+            --column-count: @Model.Columns;
+            --row-count: @Model.Rows;
+        }
+    </style>
+
     <section class="game-layout" data-active-view="grid" aria-label="Crossword game">
         <div class="board-panel">
             <div class="board-toolbar">
@@ -72,8 +79,7 @@
             <div class="crossword-board-wrap">
                 <div class="crossword-grid"
                      role="grid"
-                     aria-label="Crossword letter grid"
-                     style="--column-count: @Model.Columns; --row-count: @Model.Rows">
+                     aria-label="Crossword letter grid">
                     @foreach (var cell in Model.Cells)
                     {
                         if (cell.IsPlayable)
