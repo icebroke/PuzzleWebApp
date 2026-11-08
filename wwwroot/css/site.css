@@ -343,6 +343,14 @@ input {
 .game-page {
   width: min(100%, 1300px);
   margin: 0 auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.game-page input,
+.game-page textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .game-header {
