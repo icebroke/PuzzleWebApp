@@ -7,6 +7,7 @@
   const inputs = Array.from(root.querySelectorAll(".crossword-cell"));
   const clueButtons = Array.from(root.querySelectorAll(".clue-button"));
   const directionToggle = root.querySelector("#direction-toggle");
+  const directionIcon = root.querySelector("#direction-icon");
   const directionLabel = root.querySelector("#direction-label");
   const gameLayout = root.querySelector(".game-layout");
   const gameViewButtons = Array.from(root.querySelectorAll("[data-game-view]"));
@@ -65,6 +66,7 @@
     activeDirection = clue.dataset.direction;
     activeClueText.textContent = clue.querySelector(".clue-text").textContent;
     activeClueMeta.textContent = `${directionName(activeDirection)} · ${clue.querySelector(".clue-length").textContent}`;
+    directionIcon.textContent = activeDirection === "Across" ? "↔" : "↕";
     directionLabel.textContent = directionName(activeDirection);
     directionToggle.setAttribute(
       "aria-label",
@@ -170,7 +172,7 @@
   }
 
   async function sendProgress(snapshot) {
-    saveStatus.textContent = "Menyimpan kemajuan…";
+    saveStatus.textContent = "Menyimpan data…";
     const response = await fetch("/Home/SaveProgress", {
       method: "POST",
       headers: {
@@ -201,14 +203,14 @@
     }
 
     updateAnsweredCount(result.answeredCount, result.totalClues);
-    saveStatus.textContent = "Kemajuan disimpan";
+    saveStatus.textContent = "Data disimpan";
   }
 
   function saveProgress(snapshot = getLetters()) {
     const saveOperation = saveQueue.then(() => sendProgress(snapshot));
     saveQueue = saveOperation.catch((error) => {
       saveStatus.textContent =
-        error.message || "Kemajuan tidak dapat disimpan. Sila cuba lagi.";
+        error.message || "Data tidak dapat disimpan. Sila cuba lagi.";
       saveStatus.closest(".game-status").classList.add("has-error");
     });
     saveStatus.closest(".game-status").classList.remove("has-error");
@@ -452,19 +454,13 @@
       ).matches;
       const scrollBehavior = prefersReducedMotion ? "auto" : "smooth";
       if (window.matchMedia("(max-width: 900px)").matches) {
-        root.querySelector(".board-panel")?.scrollIntoView({
+        targetCell?.focus({ preventScroll: true });
+        targetCell?.select();
+        targetCell?.scrollIntoView({
           behavior: scrollBehavior,
-          block: "start",
+          block: "center",
+          inline: "center",
         });
-        const boardWrap = root.querySelector(".crossword-board-wrap");
-        const targetSquare = targetCell?.closest(".crossword-square");
-        if (boardWrap && targetSquare) {
-          boardWrap.scrollLeft = Math.max(
-            0,
-            targetSquare.offsetLeft -
-              (boardWrap.clientWidth - targetSquare.clientWidth) / 2,
-          );
-        }
       } else {
         targetCell?.focus({ preventScroll: true });
         targetCell?.scrollIntoView({

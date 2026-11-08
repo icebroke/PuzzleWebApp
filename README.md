@@ -1,6 +1,6 @@
 # PuzzleWebApp
 
-Aplikasi web berasaskan ASP.NET Core MVC yang membolehkan pengguna menyertai permainan teka silang kata bertema integriti, akauntabiliti dan tadbir urus. Projek ini menggabungkan pengalaman permainan interaktif dengan papan pentadbiran untuk memantau kemajuan dan keputusan peserta.
+Aplikasi web berasaskan ASP.NET Core MVC yang membolehkan pengguna menyertai permainan teka silang kata bertema integriti, akauntabiliti dan tadbir urus. Projek ini menggabungkan pengalaman permainan interaktif dengan papan pentadbiran untuk memantau data dan keputusan peserta.
 
 ## Gambaran keseluruhan
 
@@ -12,13 +12,13 @@ PuzzleWebApp dibangunkan untuk mengendalikan satu set permainan teka silang kata
 - tadbir urus yang baik
 - pencegahan rasuah dan salah guna kuasa
 
-Pengguna boleh memasukkan nama dan ID pemain, menyimpan kemajuan jawapan, menghantar penyelesaian, serta melihat status permainan mereka. Pentadbir pula boleh log masuk untuk melihat ringkasan jawapan semua peserta dan analisis setiap cubaannya.
+Pengguna boleh memasukkan nama dan ID pemain, menyimpan data jawapan, menghantar penyelesaian, serta melihat status permainan mereka. Pentadbir pula boleh log masuk untuk melihat ringkasan jawapan semua peserta dan analisis setiap cubaannya.
 
 ## Ciri-ciri utama
 
 - Permainan teka silang kata berasaskan grid
 - Log masuk pemain dengan nama dan ID unik
-- Simpan kemajuan permainan secara automatik dalam pangkalan data
+- Simpan data permainan secara automatik dalam pangkalan data
 - Penghantaran jawapan dengan pengesahan anti-forgery
 - Papan pentadbiran dengan ringkasan keputusan mengikut pemain dan pusingan
 - Pemeriksaan jawapan, penilaian seri, dan analisis jumlah jawapan yang betul
@@ -27,7 +27,7 @@ Pengguna boleh memasukkan nama dan ID pemain, menyimpan kemajuan jawapan, mengha
 - Keselamatan tambahan melalui CSP (Content Security Policy)
 - Pangkalan data SQLite yang dicipta dan disemai secara automatik
 - Susun atur teka silang kata 16 × 18 dengan persilangan jawapan yang disahkan
-- Kemajuan pemain sedia ada dikekalkan apabila kedudukan jawapan dikemas kini
+- Data pemain sedia ada dikekalkan apabila kedudukan jawapan dikemas kini
 
 ## Teknologi yang digunakan
 
@@ -157,7 +157,7 @@ Selepas log masuk, pentadbir boleh:
 
 ## Pangkalan data dan benih data
 
-Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `AdminUserSeed` akan memastikan jadual serta akaun pentadbir awal tersedia; `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Kemajuan pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
+Apabila aplikasi dimulakan, `AppDbContext` akan memastikan pangkalan data dibuat dan migrasi digunakan. `AdminUserSeed` akan memastikan jadual serta akaun pentadbir awal tersedia; `CrosswordSeed` akan menyemai teka silang kata awal jika data belum wujud. Jika susun atur teka silang kata sedia ada berubah, kedudukan petunjuk dan dimensi grid akan dikemas kini. Data pemain dipetakan semula mengikut kedudukan huruf dalam jawapan masing-masing.
 
 Pentadbir boleh menetapkan waktu mula dan tamat setiap teka silang kata dalam waktu Malaysia; masa disimpan sebagai UTC. Pemain hanya boleh menyertai, membuka, menyimpan atau menghantar permainan ketika waktu itu aktif. Kedua-dua masa perlu ditetapkan untuk jadual automatik berfungsi. Pengaktifan manual oleh pentadbir membuka satu teka silang kata serta-merta dan mengatasi jadual; teka silang kata lain yang diaktifkan secara manual akan menggantikannya. Pangkalan data SQLite sedia ada ditambah secara automatik dengan lajur jadual apabila aplikasi bermula.
 

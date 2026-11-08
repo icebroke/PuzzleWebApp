@@ -1,6 +1,6 @@
 @model PuzzleWebApp.ViewModels.AdminPuzzleSummaryViewModel
 @{
-    ViewData["Title"] = "Tetapkan semula permainan";
+    ViewData["Title"] = "Reset semula permainan";
 }
 
 <main class="admin-page">
@@ -8,7 +8,7 @@
         <div>
             <a asp-action="Puzzles" class="admin-back-link">← Semua teka silang kata</a>
             <p class="eyebrow admin-detail-eyebrow">Pengesahan</p>
-            <h1>Tetapkan semula permainan?</h1>
+            <h1>Reset semula permainan?</h1>
             <p class="admin-subtitle">Teka silang kata dan jadualnya akan dikekalkan.</p>
         </div>
     </header>
@@ -20,7 +20,7 @@
         <form asp-action="ResetPuzzleGameConfirmed" asp-route-id="@Model.Id" method="post" class="puzzle-delete-actions">
             @Html.AntiForgeryToken()
             <a asp-action="Puzzles" class="btn btn-outline-secondary">Batal</a>
-            <button type="submit" class="btn btn-danger">Tetapkan semula permainan</button>
+            <button type="submit" class="btn btn-danger">Reset semula permainan</button>
         </form>
     </section>
 </main>

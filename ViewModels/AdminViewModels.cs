@@ -124,6 +124,8 @@ public class AdminPlayerSummaryViewModel
 
 public class AdminAttemptDetailViewModel
 {
+    public int AttemptId { get; set; }
+    public int RoundNumber { get; set; }
     public string CrosswordTitle { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
     public string PlayerId { get; set; } = string.Empty;

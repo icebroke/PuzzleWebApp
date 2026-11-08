@@ -20,8 +20,9 @@
             }
             else
             {
-                <small>Belum dihantar · kemajuan semasa</small>
+                <small>Belum dihantar · data semasa</small>
             }
+            <a asp-action="ResetPlayerGame" asp-route-id="@Model.AttemptId" class="btn btn-outline-danger btn-sm">Reset semula percubaan</a>
         </div>
     </header>
 
@@ -40,11 +41,12 @@
             <div><span class="panel-kicker">Skema jawapan</span><h2>Keputusan setiap petunjuk</h2></div>
         </div>
         <div class="answer-review-list">
-            @foreach (var clue in Model.Clues)
+            @for (var index = 0; index < Model.Clues.Count; index++)
             {
+                var clue = Model.Clues[index];
                 <article class="answer-review-card @(clue.IsCorrect ? "is-correct" : clue.IsAnswered ? "is-incorrect" : "is-unanswered")">
                     <div class="answer-review-topline">
-                        <span class="clue-number">@clue.Number</span>
+                        <span class="clue-number">@(index + 1)</span>
                         <span class="admin-direction">@(clue.Direction == PuzzleWebApp.Models.CrosswordDirection.Across ? "Melintang" : "Menegak")</span>
                         @if (clue.IsCorrect)
                         {

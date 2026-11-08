@@ -65,7 +65,7 @@
                             <strong id="remaining-time">@(Model.IsSubmitted ? Model.TimeExpired ? "00:00" : "Selesai" : $"{Model.RemainingSeconds / 60:00}:{Model.RemainingSeconds % 60:00}")</strong>
                 </div>
                 <button type="button" class="direction-toggle" id="direction-toggle" aria-label="Tukar arah petunjuk">
-                    <span class="direction-icon" aria-hidden="true">↔</span>
+                    <span class="direction-icon" id="direction-icon" aria-hidden="true">↔</span>
                     <span id="direction-label">Melintang</span>
                 </button>
             </div>
@@ -155,7 +155,7 @@
                                 aria-pressed="false">
                             <span class="clue-number">@clue.Number</span>
                             <span class="clue-text">@clue.Text</span>
-                            <span class="clue-length">@clue.Length huruf</span>
+                            <span class="clue-length fw-bold">@(clue.Direction == CrosswordDirection.Across ? "Melintang" : "Menegak") · @clue.Length huruf</span>
                             <span class="clue-check" aria-hidden="true">✓</span>
                         </button>
                     </li>

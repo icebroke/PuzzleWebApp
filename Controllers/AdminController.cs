@@ -509,6 +509,51 @@ public class AdminController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> ResetPlayerGame(int id)
+    {
+        var attempt = await _db.CrosswordAttempts
+            .AsNoTracking()
+            .Include(existing => existing.Crossword)
+            .SingleOrDefaultAsync(existing => existing.Id == id);
+        if (attempt is null)
+        {
+            return NotFound();
+        }
+
+        return View(new AdminAttemptDetailViewModel
+        {
+            AttemptId = attempt.Id,
+            RoundNumber = attempt.Crossword.RoundNumber,
+            CrosswordTitle = attempt.Crossword.Title,
+            PlayerName = attempt.PlayerName,
+            PlayerId = attempt.PlayerId,
+            SubmittedAtUtc = attempt.SubmittedAtUtc
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPlayerGameConfirmed(int id)
+    {
+        var attempt = await _db.CrosswordAttempts
+            .Include(existing => existing.Crossword)
+            .SingleOrDefaultAsync(existing => existing.Id == id);
+        if (attempt is null)
+        {
+            return NotFound();
+        }
+
+        var playerName = attempt.PlayerName;
+        var playerId = attempt.PlayerId;
+        var roundNumber = attempt.Crossword.RoundNumber;
+        _db.CrosswordAttempts.Remove(attempt);
+        await _db.SaveChangesAsync();
+
+        TempData["AdminNotice"] = $"Percubaan Pusingan {roundNumber} untuk {playerName} telah ditetapkan semula. Percubaan pemain lain tidak berubah.";
+        return RedirectToAction(nameof(Index), new { q = playerId });
+    }
+
+    [HttpGet]
     public async Task<IActionResult> DeletePuzzle(int id)
     {
         if (await _db.Crosswords.CountAsync() <= 1)
@@ -586,6 +631,8 @@ public class AdminController : Controller
 
         return View(new AdminAttemptDetailViewModel
         {
+            AttemptId = attempt.Id,
+            RoundNumber = attempt.Crossword.RoundNumber,
             CrosswordTitle = attempt.Crossword.Title,
             PlayerName = attempt.PlayerName,
             PlayerId = attempt.PlayerId,
@@ -618,7 +665,7 @@ public class AdminController : Controller
 
         if (model.ScheduledStartAt.HasValue != model.ScheduledEndAt.HasValue)
         {
-            ModelState.AddModelError(nameof(model.ScheduledEndAt), "Tetapkan kedua-dua tarikh mula dan tamat, atau kosongkan kedua-duanya.");
+            ModelState.AddModelError(nameof(model.ScheduledEndAt), "Reset kedua-dua tarikh mula dan tamat, atau kosongkan kedua-duanya.");
         }
         else if (model.ScheduledStartAt.HasValue && model.ScheduledEndAt <= model.ScheduledStartAt)
         {

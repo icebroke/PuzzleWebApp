@@ -1,0 +1,26 @@
+@model PuzzleWebApp.ViewModels.AdminAttemptDetailViewModel
+@{
+    ViewData["Title"] = "Reset semula percubaan pemain";
+}
+
+<main class="admin-page">
+    <header class="admin-header">
+        <div>
+            <a asp-action="Attempt" asp-route-id="@Model.AttemptId" class="admin-back-link">← Kembali ke semakan pemain</a>
+            <p class="eyebrow admin-detail-eyebrow">Pengesahan</p>
+            <h1>Reset semula percubaan?</h1>
+            <p class="admin-subtitle">Pusingan @Model.RoundNumber · @Model.CrosswordTitle</p>
+        </div>
+    </header>
+    <section class="admin-results-panel puzzle-delete-panel">
+        <span class="panel-kicker">Pemain</span>
+        <h2>@Model.PlayerName</h2>
+        <p><span class="admin-player-id">@Model.PlayerId</span></p>
+        <p class="puzzle-delete-warning">Semua jawapan dan keputusan pemain ini untuk pusingan ini akan dipadam. Percubaan pemain lain dan pusingan lain tidak akan berubah. Pemain boleh bermula semula.</p>
+        <form asp-action="ResetPlayerGameConfirmed" asp-route-id="@Model.AttemptId" method="post" class="puzzle-delete-actions">
+            @Html.AntiForgeryToken()
+            <a asp-action="Attempt" asp-route-id="@Model.AttemptId" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-danger">Reset semula percubaan</button>
+        </form>
+    </section>
+</main>
