@@ -2908,4 +2908,13 @@ input {
     margin-left: -2px;
     padding: 10px;
   }
+
+  .board-panel {
+    scroll-margin-top: 62px;
+  }
+
+  .crossword-cell {
+    min-width: 0;
+    font-size: clamp(16px, 5vw, 22px);
+  }
 }

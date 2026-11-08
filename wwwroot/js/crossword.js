@@ -135,7 +135,7 @@
     const target = root.querySelector(
       `.crossword-cell[data-row="${row}"][data-column="${column}"]`,
     );
-    target?.focus();
+    target?.focus({ preventScroll: true });
   }
 
   function moveByArrow(input, key) {
@@ -151,7 +151,7 @@
     const target = root.querySelector(
       `.crossword-cell[data-row="${row}"][data-column="${column}"]`,
     );
-    target?.focus();
+    target?.focus({ preventScroll: true });
   }
 
   function getLetters() {
@@ -447,14 +447,32 @@
       const targetCell = root.querySelector(
         `.crossword-cell[data-row="${row}"][data-column="${column}"]`,
       );
-      targetCell?.focus({ preventScroll: true });
-      targetCell?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-        block: "center",
-        inline: "nearest",
-      });
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      const scrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        root.querySelector(".board-panel")?.scrollIntoView({
+          behavior: scrollBehavior,
+          block: "start",
+        });
+        const boardWrap = root.querySelector(".crossword-board-wrap");
+        const targetSquare = targetCell?.closest(".crossword-square");
+        if (boardWrap && targetSquare) {
+          boardWrap.scrollLeft = Math.max(
+            0,
+            targetSquare.offsetLeft -
+              (boardWrap.clientWidth - targetSquare.clientWidth) / 2,
+          );
+        }
+      } else {
+        targetCell?.focus({ preventScroll: true });
+        targetCell?.scrollIntoView({
+          behavior: scrollBehavior,
+          block: "center",
+          inline: "nearest",
+        });
+      }
     });
   });
 
@@ -473,7 +491,7 @@
     const nextKey = activeInput && keyFor(activeInput, nextDirection);
     if (nextKey) {
       selectClue(nextKey);
-      activeInput.focus();
+      activeInput.focus({ preventScroll: true });
       return;
     }
 
@@ -483,7 +501,7 @@
     if (nextInput) {
       activeInput = nextInput;
       selectClue(keyFor(nextInput, nextDirection));
-      nextInput.focus();
+      nextInput.focus({ preventScroll: true });
     }
   });
 
