@@ -201,12 +201,18 @@ public class AdminController : Controller
                     : 0,
                 RoundOneTotalClues = roundOneClues,
                 RoundOneSubmitted = roundOneSubmitted,
+                RoundOneTimeTaken = roundOne is not null && roundOne.SubmittedAtUtc.HasValue
+                    ? roundOne.SubmittedAtUtc.Value - roundOne.StartedAtUtc
+                    : null,
                 RoundTwoAttemptId = roundTwo?.Id,
                 RoundTwoCorrectCount = roundTwoSubmitted
                     ? crosswordById[roundTwo!.CrosswordId].Clues.Count(clue => CrosswordScoring.IsClueCorrect(clue, roundTwoLetters))
                     : 0,
                 RoundTwoTotalClues = roundTwoClues,
                 RoundTwoSubmitted = roundTwoSubmitted,
+                RoundTwoTimeTaken = roundTwo is not null && roundTwo.SubmittedAtUtc.HasValue
+                    ? roundTwo.SubmittedAtUtc.Value - roundTwo.StartedAtUtc
+                    : null,
                 RoundTwoCreativeSubmitted = roundTwo?.CreativeSubmittedAtUtc.HasValue == true,
                 CreativeJudgmentOrder = roundTwo?.CreativeJudgmentOrder
             };
@@ -637,6 +643,7 @@ public class AdminController : Controller
             PlayerName = attempt.PlayerName,
             PlayerId = attempt.PlayerId,
             CreativeAnswer = attempt.CreativeAnswer,
+            StartedAtUtc = attempt.StartedAtUtc,
             SubmittedAtUtc = attempt.SubmittedAtUtc,
             CorrectCount = results.Count(result => result.IsCorrect),
             AnsweredCount = results.Count(result => result.IsAnswered),

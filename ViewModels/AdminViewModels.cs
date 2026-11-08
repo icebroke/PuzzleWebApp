@@ -109,10 +109,12 @@ public class AdminPlayerSummaryViewModel
     public int RoundOneCorrectCount { get; set; }
     public int RoundOneTotalClues { get; set; }
     public bool RoundOneSubmitted { get; set; }
+    public TimeSpan? RoundOneTimeTaken { get; set; }
     public int? RoundTwoAttemptId { get; set; }
     public int RoundTwoCorrectCount { get; set; }
     public int RoundTwoTotalClues { get; set; }
     public bool RoundTwoSubmitted { get; set; }
+    public TimeSpan? RoundTwoTimeTaken { get; set; }
     public bool RoundTwoCreativeSubmitted { get; set; }
     public int? CreativeJudgmentOrder { get; set; }
     public List<int> CreativeJudgmentOptions { get; set; } = [];
@@ -130,7 +132,9 @@ public class AdminAttemptDetailViewModel
     public string PlayerName { get; set; } = string.Empty;
     public string PlayerId { get; set; } = string.Empty;
     public string CreativeAnswer { get; set; } = string.Empty;
+    public DateTime StartedAtUtc { get; set; }
     public DateTime? SubmittedAtUtc { get; set; }
+    public TimeSpan? TimeTaken => SubmittedAtUtc.HasValue ? SubmittedAtUtc.Value - StartedAtUtc : null;
     public int CorrectCount { get; set; }
     public int AnsweredCount { get; set; }
     public int TotalClues { get; set; }

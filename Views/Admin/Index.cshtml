@@ -93,6 +93,10 @@
                                 @if (attempt.RoundOneSubmitted)
                                 {
                                     <strong>@attempt.RoundOneCorrectCount</strong><span class="admin-score-total"> / @attempt.RoundOneTotalClues</span>
+                                    @if (attempt.RoundOneTimeTaken is { } roundOneTimeTaken)
+                                    {
+                                        <br /><small class="admin-score-total">Masa: @((int)roundOneTimeTaken.TotalMinutes) minit @roundOneTimeTaken.Seconds.ToString("D2") saat</small>
+                                    }
                                 }
                                 else
                                 {
@@ -103,6 +107,10 @@
                                 @if (attempt.RoundTwoSubmitted)
                                 {
                                     <strong>@attempt.RoundTwoCorrectCount</strong><span class="admin-score-total"> / @attempt.RoundTwoTotalClues</span>
+                                    @if (attempt.RoundTwoTimeTaken is { } roundTwoTimeTaken)
+                                    {
+                                        <br /><small class="admin-score-total">Masa: @((int)roundTwoTimeTaken.TotalMinutes) minit @roundTwoTimeTaken.Seconds.ToString("D2") saat</small>
+                                    }
                                 }
                                 else
                                 {

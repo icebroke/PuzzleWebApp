@@ -17,6 +17,10 @@
             @if (Model.SubmittedAtUtc.HasValue)
             {
                 <small>Dihantar pada @Model.SubmittedAtUtc.Value.ToLocalTime().ToString("g")</small>
+                @if (Model.TimeTaken is { } timeTaken)
+                {
+                    <small>Masa diambil: @((int)timeTaken.TotalMinutes) minit @timeTaken.Seconds.ToString("D2") saat</small>
+                }
             }
             else
             {
