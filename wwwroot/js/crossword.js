@@ -170,7 +170,7 @@
   }
 
   async function sendProgress(snapshot) {
-    saveStatus.textContent = "Menyimpan kemajuan…";
+    saveStatus.textContent = "Menyimpan data…";
     const response = await fetch("/Home/SaveProgress", {
       method: "POST",
       headers: {
@@ -201,14 +201,14 @@
     }
 
     updateAnsweredCount(result.answeredCount, result.totalClues);
-    saveStatus.textContent = "Kemajuan disimpan";
+    saveStatus.textContent = "Data disimpan";
   }
 
   function saveProgress(snapshot = getLetters()) {
     const saveOperation = saveQueue.then(() => sendProgress(snapshot));
     saveQueue = saveOperation.catch((error) => {
       saveStatus.textContent =
-        error.message || "Kemajuan tidak dapat disimpan. Sila cuba lagi.";
+        error.message || "Data tidak dapat disimpan. Sila cuba lagi.";
       saveStatus.closest(".game-status").classList.add("has-error");
     });
     saveStatus.closest(".game-status").classList.remove("has-error");

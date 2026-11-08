@@ -235,7 +235,7 @@ public class HomeController : Controller
 
         if (request?.Letters is null)
         {
-            return BadRequest(new { message = "Tiada kemajuan teka silang kata diterima." });
+            return BadRequest(new { message = "Tiada data teka silang kata diterima." });
         }
 
         var attempt = await _db.CrosswordAttempts
@@ -538,7 +538,7 @@ public class HomeController : Controller
         {
             if (!allowedCells.Contains(key))
             {
-                error = "Kemajuan yang dihantar mengandungi petak di luar teka silang kata ini.";
+                error = "Data yang dihantar mengandungi petak di luar teka silang kata ini.";
                 return false;
             }
 

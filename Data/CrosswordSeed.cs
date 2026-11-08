@@ -119,7 +119,7 @@ public static class CrosswordSeed
             ("Sebelum melantik kontraktor, jabatan menyemak latar belakang, kemampuan kewangan dan rekod pengalaman kontraktor bagi memastikan kesesuaiannya. Proses ini dikenali sebagai __________.", "Usaha Wajar"),
             ("Organisasi menetapkan had kuasa melulus, pemeriksaan dokumen dan pengesahan transaksi bagi mengurangkan risiko kesilapan serta penyelewengan. Kesemua langkah ini merupakan __________ organisasi.", "Kawalan Dalaman"),
             ("Sebelum melaksanakan sesuatu program, jabatan mengenal pasti kemungkinan masalah, menilai kesannya dan menyediakan langkah pencegahan. Proses ini dikenali sebagai __________.", "Pengurusan risiko"),
-            ("Ketua jabatan menyemak kemajuan pelaksanaan sesuatu projek dari semasa ke semasa bagi memastikan kerja berjalan mengikut perancangan. Aktiviti ini dikenali sebagai __________.", "Pemantauan"),
+            ("Ketua jabatan menyemak data pelaksanaan sesuatu projek dari semasa ke semasa bagi memastikan kerja berjalan mengikut perancangan. Aktiviti ini dikenali sebagai __________.", "Pemantauan"),
             ("Apabila menerima aduan salah laku, pihak yang diberi kuasa perlu mendapatkan keterangan, mengumpulkan bukti dan meneliti fakta sebelum membuat keputusan. Proses ini dikenali sebagai __________.", "Siasatan"),
             ("Kakitangan yang didapati melanggar peraturan perkhidmatan boleh dikenakan __________ mengikut peraturan yang berkuat kuasa.", "Tindakan Tatatertib"),
             ("Pembelian peralatan yang tidak diperlukan sehingga menyebabkan penggunaan wang awam secara tidak berfaedah merupakan satu bentuk __________.", "Pembaziran"),
