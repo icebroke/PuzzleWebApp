@@ -31,7 +31,10 @@
   ).value;
   for (const eventName of ["copy", "contextmenu"]) {
     root.addEventListener(eventName, (event) => {
-      if (!(event.target instanceof Element) || !event.target.closest("input, textarea")) {
+      if (
+        !(event.target instanceof Element) ||
+        !event.target.closest("input, textarea")
+      ) {
         event.preventDefault();
       }
     });
