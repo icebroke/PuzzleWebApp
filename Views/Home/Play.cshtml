@@ -142,8 +142,9 @@
                 <span class="clue-count">@Model.Clues.Count</span>
             </div>
             <ol class="clue-list">
-                @foreach (var clue in orderedClues)
+                @for (var index = 0; index < orderedClues.Count; index++)
                 {
+                    var clue = orderedClues[index];
                     <li>
                         <button type="button"
                                 class="clue-button"
@@ -153,7 +154,7 @@
                                 data-start-column="@clue.StartColumn"
                                 data-length="@clue.Length"
                                 aria-pressed="false">
-                            <span class="clue-number">@clue.Number</span>
+                            <span class="clue-number">@(index + 1)</span>
                             <span class="clue-text">@clue.Text</span>
                             <span class="clue-length">@clue.Length huruf</span>
                             <span class="clue-check" aria-hidden="true">✓</span>
