@@ -1936,6 +1936,7 @@ input {
   .board-panel {
     width: min(100%, 650px);
     justify-self: center;
+    scroll-margin-top: 62px;
   }
 
   .clues-panel {

@@ -452,19 +452,13 @@
       ).matches;
       const scrollBehavior = prefersReducedMotion ? "auto" : "smooth";
       if (window.matchMedia("(max-width: 900px)").matches) {
-        root.querySelector(".board-panel")?.scrollIntoView({
+        targetCell?.focus({ preventScroll: true });
+        targetCell?.select();
+        targetCell?.scrollIntoView({
           behavior: scrollBehavior,
-          block: "start",
+          block: "center",
+          inline: "center",
         });
-        const boardWrap = root.querySelector(".crossword-board-wrap");
-        const targetSquare = targetCell?.closest(".crossword-square");
-        if (boardWrap && targetSquare) {
-          boardWrap.scrollLeft = Math.max(
-            0,
-            targetSquare.offsetLeft -
-              (boardWrap.clientWidth - targetSquare.clientWidth) / 2,
-          );
-        }
       } else {
         targetCell?.focus({ preventScroll: true });
         targetCell?.scrollIntoView({
