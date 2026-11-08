@@ -9,6 +9,7 @@
             <img class="brand-mark mdht-logo" src="~/images/mdht-logo.png" alt="Majlis Daerah Hulu Terengganu" />
             @if (Model.IsPuzzleAvailable)
             {
+                <p class="eyebrow">Pusingan @Model.RoundNumber · Cabaran anda</p>
                 <h1>@Model.CrosswordTitle</h1>
                 <p class="intro">@Model.CrosswordDescription</p>
             }
@@ -21,19 +22,25 @@
 
         @if (!Model.IsPuzzleAvailable)
         {
-            <p class="admin-notice" role="status">@Model.AvailabilityMessage</p>
-            @if (Model.ScheduledStartAtMalaysia.HasValue && Model.ScheduledEndAtMalaysia.HasValue)
-            {
-                <div class="join-note" role="note">
-                    <strong>Jadual pusingan @Model.RoundNumber.</strong>
-                    <span>Permainan dibuka dari <b>@Model.ScheduledStartAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b> hingga <b>@Model.ScheduledEndAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b>.</span>
-                </div>
-            }
+            <div class="join-unavailable">
+                <p class="admin-notice" role="status">@Model.AvailabilityMessage</p>
+                @if (Model.ScheduledStartAtMalaysia.HasValue && Model.ScheduledEndAtMalaysia.HasValue)
+                {
+                    <div class="join-note" role="note">
+                        <strong>Jadual pusingan @Model.RoundNumber.</strong>
+                        <span>Permainan dibuka dari <b>@Model.ScheduledStartAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b> hingga <b>@Model.ScheduledEndAtMalaysia.Value.ToString("dd/MM/yyyy HH:mm")</b>.</span>
+                    </div>
+                }
+            </div>
         }
         else
         {
         <form asp-action="Join" method="post" class="join-form" data-ajax-form>
             @Html.AntiForgeryToken()
+            <div class="join-form-heading">
+                <span class="panel-kicker">Sedia untuk bermain?</span>
+                <h2>Maklumat pemain</h2>
+            </div>
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
             <div class="mb-3">
                 <label asp-for="PlayerName" class="form-label"></label>
